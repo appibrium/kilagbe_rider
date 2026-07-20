@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "189248694073",
+    "project_id": "khanapina-880ea",
+    "storage_bucket": "khanapina-880ea.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189248694073:android:fd3ef4a3251bc2fbb0eae8",
+        "android_client_info": {
+          "package_name": "com.itflor.khanapina"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_Rq_phkxtT9FjtLhnmuLfQGzsfavv4So"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189248694073:android:817858e96d5c9ceeb0eae8",
+        "android_client_info": {
+          "package_name": "com.khanapina.rider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_Rq_phkxtT9FjtLhnmuLfQGzsfavv4So"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
