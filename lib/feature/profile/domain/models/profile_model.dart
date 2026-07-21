@@ -41,6 +41,15 @@ class ProfileModel {
   double? dmMaxCashInHand;
   int? totalDelivery;
 
+  /// V4.0 additions: this app is delivery-only, so ride-share stays permanently off.
+  bool isDeliveryOn = true;
+  bool isRideOn = false;
+  double? totalEarning;
+  double? totalIncome;
+  double? tripIncome;
+  double? deliveryIncome;
+  double? totalTips;
+
   ProfileModel({
     this.id,
     this.fName,
@@ -132,6 +141,11 @@ class ProfileModel {
     showPayNowButton = json['show_pay_now_button'];
     dmMaxCashInHand = json['dm_max_cash_in_hand']?.toDouble();
     totalDelivery = json['total_delivery'];
+    totalEarning = json['total_earning']?.toDouble();
+    totalIncome = json['total_income']?.toDouble();
+    tripIncome = json['trip_income']?.toDouble();
+    deliveryIncome = json['delivery_income']?.toDouble();
+    totalTips = json['total_tips']?.toDouble();
   }
 
   Map<String, dynamic> toJson() {

@@ -1,9 +1,11 @@
 import 'package:stackfood_multivendor_driver/feature/language/domain/models/language_model.dart';
+import 'package:stackfood_multivendor_driver/util/enums.dart';
 import 'package:stackfood_multivendor_driver/util/images.dart';
 
 class AppConstants {
   static const String appName = 'KhanaPina Rider';
   static const double appVersion = 8.7; ///Flutter SDK: 3.38.5
+  static const AppMode appMode = AppMode.delivery;
 
   static const String baseUrl = 'https://admin.khanapinabd.com';
   static const String configUri = '/api/v1/config';
@@ -71,6 +73,33 @@ class AppConstants {
   static const String langIntro = 'language_intro';
   static const String maintenanceModeTopic = 'maintenance_mode_deliveryman_app';
   static const String notificationIdList = 'notification_id_list';
+  static const String userCountryDialCode = 'user_country_dial_code';
+
+  /// V4.0 additions
+  static const String deliveryIncomeStatementListUri = '/api/v1/delivery-man/income-statement?limit=10&offset=';
+  static const String rideIncomeStatementListUri = '/api/v1/rideshare/rider/income-statement?limit=10&offset=';
+  static const String earningReportUri = '/api/v1/delivery-man/earning-report';
+  static const String earningReportInvoiceUri = '/deliveryman-earning-report-invoice';
+  static const String getWithdrawList = '/api/v1/delivery-man/get-withdraw-list';
+  static const String loyaltyReportUri = '/api/v1/delivery-man/loyalty-report';
+  static const String loyaltyPointListUri = '/api/v1/delivery-man/loyalty-point-list';
+  static const String dmPointConvertUri = '/api/v1/delivery-man/convert-loyalty-points';
+  static const String riderPointConvertUri = '/api/v1/rideshare/rider/loyalty-points/convert';
+  static const String referralReportUri = '/api/v1/delivery-man/referral-report';
+
+  static const String topicDeliveryman = 'all_zone_delivery_man';
+  static const String topicRider = 'all_zone_rider';
+  static const String vehicleWiseTopic = 'vehicle_wise_topic';
+  static const String maintenanceModeDeliveryMan = 'maintenance_mode_deliveryman_app';
+  static const String maintenanceModeRider = 'maintenance_mode_rider_app';
+
+  static const String canceled = 'canceled';
+  static const String pickedUp = 'picked_up';
+  static const String returned = 'returned';
+
+  static const String user = 'user';
+  static const String vendor = 'vendor';
+  static const String admin = 'admin';
 
   static List<LanguageModel> languages = [
     LanguageModel(imageUrl: Images.english, languageName: 'English', countryCode: 'US', languageCode: 'en'),

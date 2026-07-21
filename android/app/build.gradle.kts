@@ -52,6 +52,13 @@ android {
             signingConfig = signingConfigs.getByName("release") // or "release" if you have real keystore
         }
     }
+
+    packagingOptions {
+        pickFirst("lib/arm64-v8a/libaosl.so")
+        pickFirst("lib/armeabi-v7a/libaosl.so")
+        pickFirst("lib/x86/libaosl.so")
+        pickFirst("lib/x86_64/libaosl.so")
+    }
 }
 
 flutter {

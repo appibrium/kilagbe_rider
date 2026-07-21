@@ -10,6 +10,8 @@ enum NotificationType{
   cash_collect,
   unassign,
   assign,
+  // ignore: constant_identifier_names
+  ride_request,
 }
 
 class NotificationBodyModel {

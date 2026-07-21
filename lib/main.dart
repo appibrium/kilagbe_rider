@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
+import 'package:stackfood_multivendor_driver/feature/auth/controllers/auth_controller.dart';
 import 'package:stackfood_multivendor_driver/feature/language/controllers/localization_controller.dart';
 import 'package:stackfood_multivendor_driver/feature/splash/controllers/splash_controller.dart';
 import 'package:stackfood_multivendor_driver/common/controllers/theme_controller.dart';
@@ -20,7 +22,6 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterL
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Map<String, Map<String, String>> languages = await di.init();
 
   if(GetPlatform.isAndroid) {
     await Firebase.initializeApp(
@@ -36,6 +37,8 @@ Future<void> main() async {
   } else {
     await Firebase.initializeApp();
   }
+
+  Map<String, Map<String, String>> languages = await di.init();
 
   NotificationBodyModel? body;
   try {
@@ -55,14 +58,37 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   final Map<String, Map<String, String>>? languages;
   final NotificationBodyModel? body;
-  const MyApp({super.key, required this.languages, required this.body});
+  const MyApp({super.key, required this.languages, this.body});
+
+  void _route() {
+    Get.find<SplashController>().getConfigData().then((bool isSuccess) async {
+      if (isSuccess) {
+        if (Get.find<AuthController>().isLoggedIn()) {
+          Get.find<AuthController>().updateToken();
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if(GetPlatform.isWeb) {
+      Get.find<SplashController>().initSharedData();
+      _route();
+    }
+
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+
     return GetBuilder<ThemeController>(builder: (themeController) {
       return GetBuilder<LocalizationController>(builder: (localizeController) {
         return GetBuilder<SplashController>(builder: (splashController) {
-          return GetMaterialApp(
+          return (GetPlatform.isWeb && splashController.configModel == null) ? const SizedBox() : GetMaterialApp(
             title: AppConstants.appName,
             debugShowCheckedModeBanner: false,
             navigatorKey: Get.key,

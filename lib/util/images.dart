@@ -64,4 +64,36 @@ class Images {
   static const String sendIcon = 'assets/image/send.svg';
   static const String orderIcon = 'assets/image/order_on_the_way_icon.svg';
   static const String locationVectorImage = 'assets/image/location_vector.svg';
+
+  /// V4.0 additions
+  static const String allertIcon = 'assets/image/allert.png';
+  static const String bag = 'assets/image/bag.png';
+  static const String car = 'assets/image/car.png';
+  static const String deliveryIncome = 'assets/image/rider/delivery_income.png';
+  static const String discountAmount = 'assets/image/discount_amount.png';
+  static const String dmOfflineIcon = 'assets/image/dm_offline_icon.png';
+  static const String document = 'assets/image/document-text.png';
+  static const String earning = 'assets/image/earning_menu.png';
+  static const String earningReport = 'assets/image/earning_reports.png';
+  static const String editUser = 'assets/image/user-edit.png';
+  static const String emptyWallet = 'assets/image/empty-wallet.png';
+  static const String farePrice = 'assets/image/fare_price.png';
+  static const String home = 'assets/image/home.png';
+  static const String leaderBoardIcon = 'assets/image/rider/leaderboard_icon.png';
+  static const String message = 'assets/image/messages.png';
+  static const String noReview = 'assets/image/rider/no_review.png';
+  static const String notificationBall = 'assets/image/notification-bing.png';
+  static const String online = 'assets/image/online_status.png';
+  static const String request = 'assets/image/request.png';
+  static const String rideIncome = 'assets/image/rider/ride_income.png';
+  static const String security = 'assets/image/shield-security.png';
+  static const String settingIcon = 'assets/image/setting.png';
+  static const String shieldTick = 'assets/image/shield-tick.png';
+  static const String tipsSmallIcon = 'assets/image/rider/tips_small_icon.png';
+  static const String totalEarning = 'assets/image/totalEarning.png';
+  static const String totalIncome = 'assets/image/rider/total_income.png';
+  static const String totalTips = 'assets/image/rider/total_tips.png';
+  static const String translation = 'assets/image/translate.png';
+  static const String trash = 'assets/image/trash.png';
+  static const String userP = 'assets/image/user_pp.png';
 }
