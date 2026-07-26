@@ -97,23 +97,17 @@ class _VerifyDeliverySheetWidgetState extends State<VerifyDeliverySheetWidget> {
               radius: Dimensions.radiusDefault,
               margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge),
               onPressed: (widget.verify! && orderController.otp.length != 4) ? null : () {
-                if(widget.cod){
-                  Get.find<OrderController>().updateOrderStatus(widget.orderID, 'delivered').then((success) {
-                    if(success) {
-                      Get.find<ProfileController>().getProfile();
-                      Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
-                    }
-                  });
-                } else {
-                  Get.find<OrderController>().updateOrderStatus(widget.orderID, 'delivered').then((success) {
-                    if(success) {
-                      Get.find<ProfileController>().getProfile();
-                      Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
+                Get.find<OrderController>().updateOrderStatus(widget.orderID, 'delivered').then((success) {
+                  // Close this sheet and report the outcome, so the caller can
+                  // chain the cash collection sheet for COD orders.
+                  Get.back(result: success);
+                  if(success) {
+                    Get.find<ProfileController>().getProfile();
+                    if(!widget.cod) {
                       Get.offAllNamed(RouteHelper.getInitialRoute());
                     }
-                  });
-                }
-
+                  }
+                });
               },
             ) : const Center(child: CircularProgressIndicator()),
 

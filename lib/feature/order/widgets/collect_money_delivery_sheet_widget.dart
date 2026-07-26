@@ -71,13 +71,15 @@ class CollectMoneyDeliverySheetWidget extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge),
               onPressed: () {
                 if(verify!) {
+                  // Already marked delivered by the OTP sheet; just close out.
                   Get.offAllNamed(RouteHelper.getInitialRoute());
                 } else {
                   Get.find<OrderController>().updateOrderStatus(orderID, 'delivered').then((success) {
                     if(success) {
                       Get.find<ProfileController>().getProfile();
-                      Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
                       Get.offAllNamed(RouteHelper.getInitialRoute());
+                    } else {
+                      Get.back();
                     }
                   });
                 }

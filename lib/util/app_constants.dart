@@ -3,11 +3,11 @@ import 'package:stackfood_multivendor_driver/util/enums.dart';
 import 'package:stackfood_multivendor_driver/util/images.dart';
 
 class AppConstants {
-  static const String appName = 'KhanaPina Rider';
+  static const String appName = 'Kilagbe Rider';
   static const double appVersion = 8.7; ///Flutter SDK: 3.38.5
   static const AppMode appMode = AppMode.delivery;
 
-  static const String baseUrl = 'https://admin.khanapinabd.com';
+  static const String baseUrl = 'https://admin.kilagba.com';
   static const String configUri = '/api/v1/config';
   static const String forgerPasswordUri = '/api/v1/auth/delivery-man/forgot-password';
   static const String verifyTokenUri = '/api/v1/auth/delivery-man/verify-token';
@@ -44,6 +44,7 @@ class AppConstants {
   static const String deleteDisbursementMethodUri = '/api/v1/delivery-man/withdraw-method/delete';
   static const String getDisbursementReportUri = '/api/v1/delivery-man/get-disbursement-report';
   static const String withdrawRequestMethodUri = '/api/v1/delivery-man/get-withdraw-method-list';
+  static const String riderRankUri = '/api/v1/delivery-man/rank';
   static const String firebaseAuthVerify = '/api/v1/auth/delivery-man/firebase-verify-token';
 
   ///chat url

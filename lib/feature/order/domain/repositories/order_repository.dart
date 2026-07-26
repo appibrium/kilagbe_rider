@@ -42,7 +42,7 @@ class OrderRepository implements OrderRepositoryInterface {
   @override
   Future<PaginatedOrderModel?> getCurrentOrders({required String status}) async {
     PaginatedOrderModel? paginatedOrderModel;
-    Response response = await apiClient.getData('${AppConstants.currentOrdersUri}?token=${_getUserToken()}&status=$status');
+    Response response = await apiClient.getData('${AppConstants.currentOrdersUri}?token=${_getUserToken()}&status=$status', handleError: false);
     if (response.statusCode == 200) {
       paginatedOrderModel = PaginatedOrderModel.fromJson(response.body);
     }
@@ -79,7 +79,9 @@ class OrderRepository implements OrderRepositoryInterface {
     Response response = await apiClient.getData('${AppConstants.orderDetailsUri}${_getUserToken()}&order_id=$orderID');
     if (response.statusCode == 200) {
       orderDetailsModel = [];
-      response.body.forEach((orderDetails) => orderDetailsModel!.add(OrderDetailsModel.fromJson(orderDetails)));
+      if(response.body is List) {
+        response.body.forEach((orderDetails) => orderDetailsModel!.add(OrderDetailsModel.fromJson(orderDetails)));
+      }
     }
     return orderDetailsModel;
   }

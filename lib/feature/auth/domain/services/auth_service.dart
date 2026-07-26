@@ -29,17 +29,8 @@ class AuthService implements AuthServiceInterface {
   }
 
   @override
-  // Future<bool> saveUserToken(Response response) async {
-  //   return await authRepositoryInterface.saveUserToken(response.body['token'], response.body['topic']);
-  // }
   Future<bool> saveUserToken(Response response) async {
-    final token = response.body['token'];
-    final topic = response.body['topic'];
-
-    return await authRepositoryInterface.saveUserToken(
-        token,
-        (topic as List).join(',') // ✅ convert List → String
-    );
+    return await authRepositoryInterface.saveUserToken(response.body['token'], response.body['topic']);
   }
 
   @override

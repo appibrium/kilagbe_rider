@@ -5,11 +5,11 @@ class StatusListModel{
 
   static List<StatusListModel> getRunningOrderStatusList(){
     return [
+      // Simplified flow: a rider only ever has orders waiting to be picked up
+      // or already picked up. The server folds confirmed/processing/handover
+      // into "accepted" so older orders remain reachable here.
       StatusListModel(statusTitle: 'all', status: 'all'),
       StatusListModel(statusTitle: 'accepted', status: 'accepted'),
-      StatusListModel(statusTitle: 'confirmed', status: 'confirmed'),
-      StatusListModel(statusTitle: 'processing', status: 'processing'),
-      StatusListModel(statusTitle: 'handover', status: 'handover'),
       StatusListModel(statusTitle: 'picked_up', status: 'picked_up'),
     ];
   }

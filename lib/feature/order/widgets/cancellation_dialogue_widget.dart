@@ -104,10 +104,13 @@ class _CancellationDialogueWidgetState extends State<CancellationDialogueWidget>
                   onPressed: (){
                     if(orderController.cancelReason != '' && orderController.cancelReason != null){
 
-                      orderController.updateOrderStatus(widget.orderId, 'canceled', back: true, reason: orderController.cancelReason).then((success) {
+                      orderController.updateOrderStatus(widget.orderId, 'canceled', reason: orderController.cancelReason).then((success) {
+                        if(Get.isDialogOpen ?? false) {
+                          Get.back();
+                        }
                         if(success) {
                           Get.find<ProfileController>().getProfile();
-                          Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
+                          Get.back();
                         }
                       });
 

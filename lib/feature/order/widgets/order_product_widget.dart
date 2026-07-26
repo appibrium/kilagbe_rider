@@ -18,22 +18,22 @@ class OrderProductWidgetWidget extends StatelessWidget {
   Widget build(BuildContext context) {
 
     String addOnText = '';
-    for (var addOn in orderDetails.addOns!) {
-      addOnText = '$addOnText${(addOnText.isEmpty) ? '' : ',  '}${addOn.name} (${addOn.quantity})';
+    for (var addOn in orderDetails.addOns ?? []) {
+      addOnText = '$addOnText${(addOnText.isEmpty) ? '' : ',  '}${addOn.name ?? ''} (${addOn.quantity ?? 0})';
     }
 
-    String? variationText = '';
+    String variationText = '';
 
-    if(orderDetails.variation!.isNotEmpty) {
+    if((orderDetails.variation ?? []).isNotEmpty) {
       for(Variation variation in orderDetails.variation!) {
-        variationText = '${variationText!}${variationText.isNotEmpty ? ', ' : ''}${variation.name} (';
-        for(VariationValue value in variation.variationValues!) {
-          variationText = '${variationText!}${variationText.endsWith('(') ? '' : ', '}${value.level}';
+        variationText = '$variationText${variationText.isNotEmpty ? ', ' : ''}${variation.name ?? ''} (';
+        for(VariationValue value in variation.variationValues ?? []) {
+          variationText = '$variationText${variationText.endsWith('(') ? '' : ', '}${value.level}';
         }
-        variationText = '${variationText!})';
+        variationText = '$variationText)';
       }
-    }else if(orderDetails.oldVariation!.isNotEmpty) {
-      variationText = orderDetails.oldVariation![0].type;
+    }else if((orderDetails.oldVariation ?? []).isNotEmpty) {
+      variationText = orderDetails.oldVariation![0].type ?? '';
     }
     
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -43,7 +43,7 @@ class OrderProductWidgetWidget extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
           child: CustomImageWidget(
-            image: '${orderDetails.foodDetails!.imageFullUrl}',
+            image: orderDetails.imageFullUrl ?? orderDetails.foodDetails?.imageFullUrl ?? '',
             height: 60, width: 60, fit: BoxFit.cover,
           ),
         ),
@@ -62,12 +62,12 @@ class OrderProductWidgetWidget extends StatelessWidget {
             Row(children: [
 
               Text(
-                PriceConverter.convertPrice(orderDetails.price! - orderDetails.discountOnFood!),
+                PriceConverter.convertPrice((orderDetails.price ?? 0) - (orderDetails.discountOnFood ?? 0)),
                 style: robotoMedium,
               ),
               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
-              orderDetails.discountOnFood! > 0 ? Expanded(child: Text(
+              (orderDetails.discountOnFood ?? 0) > 0 ? Expanded(child: Text(
                 PriceConverter.convertPrice(orderDetails.price),
                 style: robotoMedium.copyWith(
                   decoration: TextDecoration.lineThrough,
@@ -102,13 +102,13 @@ class OrderProductWidgetWidget extends StatelessWidget {
               ]),
             ) : const SizedBox(),
 
-            orderDetails.foodDetails!.variations!.isNotEmpty ? Padding(
+            variationText.isNotEmpty ? Padding(
               padding: const EdgeInsets.only(top: 3),
               child: Row(children: [
                 Text('${'variations'.tr}: ', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor)),
 
                 Flexible(child: Text(
-                  variationText!,
+                  variationText,
                   style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor),
                 )),
 
@@ -125,20 +125,20 @@ class OrderProductWidgetWidget extends StatelessWidget {
             Text('${'quantity'.tr}: ', style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall)),
 
             Text(
-              orderDetails.quantity.toString(),
+              (orderDetails.quantity ?? 0).toString(),
               style: robotoMedium.copyWith(color: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeSmall),
             ),
           ]),
           SizedBox(height: Dimensions.paddingSizeSmall),
 
-          Get.find<SplashController>().configModel!.toggleVegNonVeg! ? Container(
+          (Get.find<SplashController>().configModel!.toggleVegNonVeg ?? false) ? Container(
             padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall, horizontal: Dimensions.paddingSizeSmall),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
               color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             ),
             child: Text(
-              orderDetails.foodDetails!.veg == 0 ? 'non_veg'.tr : 'veg'.tr,
+              orderDetails.foodDetails?.veg == 0 ? 'non_veg'.tr : 'veg'.tr,
               style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeExtraSmall, color: Theme.of(context).primaryColor),
             ),
           ) : const SizedBox(),

@@ -16,7 +16,7 @@ class ProductWidget extends StatelessWidget {
       child: Row(children: [
 
         ClipRRect(borderRadius: BorderRadius.circular(Dimensions.radiusSmall), child: CustomImageWidget(
-          image: '${orderDetailsModel.foodDetails!.imageFullUrl}',
+          image: orderDetailsModel.imageFullUrl ?? orderDetailsModel.foodDetails?.imageFullUrl ?? '',
           height: 50, width: 50, fit: BoxFit.cover,
         )),
         const SizedBox(width: Dimensions.paddingSizeExtraSmall),
@@ -25,13 +25,13 @@ class ProductWidget extends StatelessWidget {
         const SizedBox(width: Dimensions.paddingSizeSmall),
 
         Expanded(child: Text(
-          orderDetailsModel.foodDetails!.name!, maxLines: 2, overflow: TextOverflow.ellipsis,
+          orderDetailsModel.foodDetails?.name ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
           style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
         )),
         const SizedBox(width: Dimensions.paddingSizeSmall),
 
         Text(
-          PriceConverter.convertPrice(orderDetailsModel.price!-orderDetailsModel.discountOnFood!),
+          PriceConverter.convertPrice((orderDetailsModel.price ?? 0) - (orderDetailsModel.discountOnFood ?? 0)),
           style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
         ),
 

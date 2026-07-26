@@ -1,7 +1,10 @@
 import 'package:stackfood_multivendor_driver/common/widgets/details_custom_card.dart';
 import 'package:stackfood_multivendor_driver/feature/order/screens/order_details_screen.dart';
 import 'package:stackfood_multivendor_driver/feature/order/domain/models/order_model.dart';
+import 'package:stackfood_multivendor_driver/feature/profile/controllers/profile_controller.dart';
+import 'package:stackfood_multivendor_driver/feature/splash/controllers/splash_controller.dart';
 import 'package:stackfood_multivendor_driver/helper/date_converter_helper.dart';
+import 'package:stackfood_multivendor_driver/helper/price_converter_helper.dart';
 import 'package:stackfood_multivendor_driver/helper/route_helper.dart';
 import 'package:stackfood_multivendor_driver/helper/string_extensions.dart';
 import 'package:stackfood_multivendor_driver/util/color_resources.dart';
@@ -85,14 +88,30 @@ class HistoryOrderWidget extends StatelessWidget {
               ]),
               const SizedBox(height: Dimensions.paddingSizeSmall),
 
-              Text(
-                orderModel.orderType == 'delivery' ? 'home_delivery'.tr : orderModel.orderType!.toTitleCase(),
-                style: robotoMedium.copyWith(
-                  color: orderModel.orderType == 'delivery' ? ColorResources.blue : Theme.of(context).primaryColor,
-                  fontSize: Dimensions.fontSizeSmall,
-                ),
-                maxLines: 1, overflow: TextOverflow.ellipsis,
-              ),
+              Row(children: [
+                Flexible(child: Text(
+                  orderModel.orderType == 'delivery' ? 'home_delivery'.tr : orderModel.orderType!.toTitleCase(),
+                  style: robotoMedium.copyWith(
+                    color: orderModel.orderType == 'delivery' ? ColorResources.blue : Theme.of(context).primaryColor,
+                    fontSize: Dimensions.fontSizeSmall,
+                  ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                )),
+
+                (Get.find<SplashController>().configModel?.showDmEarning ?? false)
+                    && Get.find<ProfileController>().profileModel?.earnings == 1 ? Expanded(
+                  child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    Text('${'delivery_charge'.tr}: ', style: robotoRegular.copyWith(
+                      fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor,
+                    )),
+
+                    Text(
+                      PriceConverter.convertPrice(orderModel.originalDeliveryCharge ?? orderModel.deliveryCharge ?? 0),
+                      style: robotoBold.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                    ),
+                  ]),
+                ) : const SizedBox(),
+              ]),
             ]),
           ),
 

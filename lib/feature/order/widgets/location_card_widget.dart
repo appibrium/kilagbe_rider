@@ -236,7 +236,7 @@ class _LocationCardWidgetState extends State<LocationCardWidget> {
                           description: 'ignore_order_description'.tr,
                           confirmButtonText: 'ignore'.tr,
                           onConfirm: (){
-                            widget.orderController.ignoreOrder(widget.index);
+                            widget.orderController.ignoreOrder(widget.orderModel.id);
                             Get.back();
                             showCustomSnackBar('order_ignored'.tr, isError: false);
                           },
@@ -269,7 +269,8 @@ class _LocationCardWidgetState extends State<LocationCardWidget> {
                           title: 'accept_this_order'.tr,
                           description: 'make_sure_your_availability_to_deliver_this_order_on_time_before_accept'.tr,
                           onConfirm: (){
-                            widget.orderController.acceptOrder(widget.orderModel.id, widget.index, widget.orderModel).then((isSuccess) {
+                            widget.orderController.acceptOrder(widget.orderModel.id, widget.orderModel).then((isSuccess) {
+                              Get.back();
                               if(isSuccess) {
                                 widget.onTap();
                                 widget.orderModel.orderStatus = (widget.orderModel.orderStatus == 'pending' || widget.orderModel.orderStatus == 'confirmed') ? 'accepted' : widget.orderModel.orderStatus;
@@ -277,7 +278,7 @@ class _LocationCardWidgetState extends State<LocationCardWidget> {
                                 Get.toNamed(
                                   RouteHelper.getOrderDetailsRoute(widget.orderModel.id),
                                   arguments: OrderDetailsScreen(
-                                    orderId: widget.orderModel.id, isRunningOrder: true, orderIndex: widget.orderController.currentOrderList!.length-1,
+                                    orderId: widget.orderModel.id, isRunningOrder: true, orderIndex: null,
                                   ),
                                 );
                               }else {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:stackfood_multivendor_driver/feature/order/controllers/order_controller.dart';
+import 'package:stackfood_multivendor_driver/feature/order/domain/models/order_details_model.dart';
 import 'package:stackfood_multivendor_driver/util/dimensions.dart';
 import 'package:stackfood_multivendor_driver/util/images.dart';
 import 'package:stackfood_multivendor_driver/util/styles.dart';
@@ -27,7 +28,7 @@ class _NewRequestDialogWidgetState extends State<NewRequestDialogWidget> {
     super.initState();
 
     _startAlarm();
-    Get.find<OrderController>().getOrderDetails(widget.orderId);
+    Get.find<OrderController>().getRequestOrderDetails(widget.orderId);
   }
 
   @override
@@ -54,6 +55,9 @@ class _NewRequestDialogWidgetState extends State<NewRequestDialogWidget> {
       child: Padding(
         padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
         child: GetBuilder<OrderController>(builder: (orderController) {
+
+          final List<OrderDetailsModel> requestDetails = orderController.requestOrderDetailsModel ?? [];
+
           return Column(mainAxisSize: MainAxisSize.min, children: [
 
             Image.asset(Images.notificationIn, height: 60, color: Theme.of(context).primaryColor),
@@ -66,12 +70,12 @@ class _NewRequestDialogWidgetState extends State<NewRequestDialogWidget> {
               ),
             ),
 
-            orderController.orderDetailsModel != null ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            requestDetails.isNotEmpty ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
 
               Text('with'.tr , textAlign: TextAlign.center, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault)),
 
               Text(
-                ' ${orderController.orderDetailsModel != null ? orderController.orderDetailsModel!.length.toString() : 0} ',
+                ' ${requestDetails.length} ',
                 textAlign: TextAlign.center, style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge),
               ),
 
@@ -79,8 +83,8 @@ class _NewRequestDialogWidgetState extends State<NewRequestDialogWidget> {
 
             ]) : const SizedBox(),
 
-            orderController.orderDetailsModel != null ? ListView.builder(
-              itemCount: orderController.orderDetailsModel!.length,
+            requestDetails.isNotEmpty ? ListView.builder(
+              itemCount: requestDetails.length,
                 shrinkWrap: true,
                 padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),
                 itemBuilder: (context,index) {
@@ -91,7 +95,7 @@ class _NewRequestDialogWidgetState extends State<NewRequestDialogWidget> {
                   Text('${'item'.tr} ${index + 1}: ', style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall)),
 
                   Flexible(child: Text(
-                    '${orderController.orderDetailsModel![index].foodDetails!.name!} ( x ${orderController.orderDetailsModel![index].quantity})',
+                    '${requestDetails[index].foodDetails?.name ?? ''} ( x ${requestDetails[index].quantity})',
                     maxLines: 2, overflow: TextOverflow.ellipsis, style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall),
                   )),
 

@@ -1,17 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_app_bar_widget.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_bottom_sheet_widget.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_confirmation_bottom_sheet.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_image_widget.dart';
-import 'package:stackfood_multivendor_driver/common/widgets/custom_snackbar_widget.dart';
 import 'package:stackfood_multivendor_driver/feature/auth/controllers/auth_controller.dart';
-import 'package:stackfood_multivendor_driver/feature/home/widgets/shift_dialogue_widget.dart';
-import 'package:stackfood_multivendor_driver/feature/order/controllers/order_controller.dart';
 import 'package:stackfood_multivendor_driver/feature/profile/controllers/profile_controller.dart';
-import 'package:stackfood_multivendor_driver/feature/profile/widgets/permission_dialog_widget.dart';
 import 'package:stackfood_multivendor_driver/feature/profile/widgets/profile_button_widget.dart';
 import 'package:stackfood_multivendor_driver/feature/profile/widgets/profile_card_widget.dart';
 import 'package:stackfood_multivendor_driver/feature/splash/controllers/splash_controller.dart';
@@ -102,63 +97,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             Row(children: [
 
-              ProfileCardWidget(title: 'total_order'.tr, data: profileController.profileModel?.orderCount.toString() ?? '0'),
+              ProfileCardWidget(title: 'total_order'.tr, data: (profileController.profileModel?.orderCount ?? 0).toString()),
               const SizedBox(width: Dimensions.paddingSizeDefault),
 
-              ProfileCardWidget(title: 'complete_delivery'.tr, data: profileController.profileModel?.totalDelivery.toString() ?? '0'),
+              ProfileCardWidget(title: 'complete_delivery'.tr, data: (profileController.profileModel?.totalDelivery ?? 0).toString()),
 
             ]),
             SizedBox(height: Dimensions.paddingSizeLarge),
 
-            GetBuilder<OrderController>(builder: (orderController) {
-              return (profileController.profileModel != null && orderController.currentOrderList != null) ? ProfileButtonWidget(
-                icon: Icons.online_prediction,
-                title: 'online_status'.tr,
-                isButtonActive: profileController.profileModel!.active == 1,
-                onTap: () async {
-                  bool isActive = profileController.profileModel!.active == 1;
-
-                  if(isActive && orderController.currentOrderList!.isNotEmpty) {
-                    showCustomSnackBar('you_can_not_go_offline_now'.tr);
-                  }else {
-                    if(isActive) {
-                      showCustomBottomSheet(
-                        child: CustomConfirmationBottomSheet(
-                          title: 'offline'.tr,
-                          description: 'are_you_sure_to_offline'.tr,
-                          onConfirm: () {
-                            if(Get.isSnackbarOpen) {
-                              Get.closeCurrentSnackbar();
-                            }
-                            profileController.updateActiveStatus(isUpdate: true);
-                          },
-                        ),
-                      );
-                    }else {
-                      LocationPermission permission = await Geolocator.checkPermission();
-                      if(permission == LocationPermission.denied || permission == LocationPermission.deniedForever
-                          || (GetPlatform.isIOS ? false : permission == LocationPermission.whileInUse)) {
-
-                        _checkPermission(() {
-                          if(profileController.shifts != null && profileController.shifts!.isNotEmpty) {
-                            Get.dialog(const ShiftDialogueWidget());
-                          }else{
-                            profileController.updateActiveStatus();
-                          }
-                        });
-                      }else {
-                        if(profileController.shifts != null && profileController.shifts!.isNotEmpty) {
-                          Get.dialog(const ShiftDialogueWidget());
-                        }else{
-                          profileController.updateActiveStatus();
-                        }
-                      }
-                    }
-                  }
-                },
-              ) : const SizedBox();
+            ProfileButtonWidget(icon: Icons.emoji_events, title: 'my_rank'.tr, onTap: () {
+              Get.toNamed(RouteHelper.getRiderRankRoute());
             }),
-            SizedBox(height: Dimensions.paddingSizeSmall),
+            SizedBox(height: Dimensions.paddingSizeLarge),
 
             ProfileButtonWidget(icon: CupertinoIcons.pencil_circle, title: 'edit_profile'.tr, onTap: () {
               Get.toNamed(RouteHelper.getUpdateProfileRoute(profileModel: profileController.profileModel!));
@@ -263,36 +213,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }),
     );
-  }
-
-  void _checkPermission(Function callback) async {
-    LocationPermission permission = await Geolocator.requestPermission();
-    permission = await Geolocator.checkPermission();
-
-    while(Get.isDialogOpen == true) {
-      Get.back();
-    }
-
-    if(permission == LocationPermission.denied/* || (GetPlatform.isIOS ? false : permission == LocationPermission.whileInUse)*/) {
-      Get.dialog(PermissionDialogWidget(description: 'you_denied'.tr, onOkPressed: () async {
-        Get.back();
-        final perm = await Geolocator.requestPermission();
-        if(perm == LocationPermission.deniedForever) await Geolocator.openAppSettings();
-        Future.delayed(Duration(seconds: 3), () {
-          if(GetPlatform.isAndroid) _checkPermission(callback);
-        });
-      }));
-    }else if(permission == LocationPermission.deniedForever || (GetPlatform.isIOS ? false : permission == LocationPermission.whileInUse)) {
-      Get.dialog(PermissionDialogWidget(description:  permission == LocationPermission.whileInUse ? 'you_denied'.tr : 'you_denied_forever'.tr, onOkPressed: () async {
-        Get.back();
-        await Geolocator.openAppSettings();
-        Future.delayed(Duration(seconds: 3), () {
-          if(GetPlatform.isAndroid) _checkPermission(callback);
-        });
-      }));
-    }else {
-      callback();
-    }
   }
 
 }

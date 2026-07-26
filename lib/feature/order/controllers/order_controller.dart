@@ -41,6 +41,20 @@ class OrderController extends GetxController implements GetxService {
   List<OrderDetailsModel>? _orderDetailsModel;
   List<OrderDetailsModel>? get orderDetailsModel => _orderDetailsModel;
 
+  /// Id of the order [_orderModel] / [_orderDetailsModel] currently belong to.
+  /// Every detail fetch is tagged with it so a response that arrives late (or
+  /// for a different order) can never overwrite the order being viewed.
+  int? _activeOrderId;
+  int? get activeOrderId => _activeOrderId;
+
+  /// Kept apart from [_orderDetailsModel] on purpose: the incoming request
+  /// popup loads its own order while the rider may be looking at another one.
+  List<OrderDetailsModel>? _requestOrderDetailsModel;
+  List<OrderDetailsModel>? get requestOrderDetailsModel => _requestOrderDetailsModel;
+  int? _requestOrderId;
+
+  double get storeWillGet => ((_orderDetailsModel != null && _orderDetailsModel!.isNotEmpty) ? _orderDetailsModel![0].storeWillGet : null) ?? _orderModel?.storeWillGet ?? 0;
+
   List<IgnoreModel> _ignoredRequests = [];
 
   bool _isLoading = false;
@@ -175,12 +189,12 @@ class OrderController extends GetxController implements GetxService {
         }
         _completedOrderList!.addAll(paginatedOrderModel.orders!);
         _completedOrderCountList = [
-          paginatedOrderModel.orderCount!.all ?? 0,
-          paginatedOrderModel.orderCount!.delivered ?? 0,
-          paginatedOrderModel.orderCount!.canceled ?? 0,
-          paginatedOrderModel.orderCount!.refundRequested ?? 0,
-          paginatedOrderModel.orderCount!.refunded ?? 0,
-          paginatedOrderModel.orderCount!.refundRequestCanceled ?? 0,
+          paginatedOrderModel.orderCount?.all ?? 0,
+          paginatedOrderModel.orderCount?.delivered ?? 0,
+          paginatedOrderModel.orderCount?.canceled ?? 0,
+          paginatedOrderModel.orderCount?.refundRequested ?? 0,
+          paginatedOrderModel.orderCount?.refunded ?? 0,
+          paginatedOrderModel.orderCount?.refundRequestCanceled ?? 0,
         ];
         _pageSize = paginatedOrderModel.totalSize;
         _paginate = false;
@@ -211,20 +225,40 @@ class OrderController extends GetxController implements GetxService {
     if(paginatedOrderModel != null) {
       _currentOrderList = [];
       _currentOrderList!.addAll(paginatedOrderModel.orders!);
+      // Index order must stay in step with StatusListModel.getRunningOrderStatusList().
+      // "accepted" folds in the legacy store-driven states so orders placed
+      // before the flow was simplified still show up under the same tab.
       _currentOrderCountList = [
-        paginatedOrderModel.orderCount!.all ?? 0,
-        paginatedOrderModel.orderCount!.accepted ?? 0,
-        paginatedOrderModel.orderCount!.confirmed ?? 0,
-        paginatedOrderModel.orderCount!.processing ?? 0,
-        paginatedOrderModel.orderCount!.handover ?? 0,
-        paginatedOrderModel.orderCount!.pickedUp ?? 0,
+        paginatedOrderModel.orderCount?.all ?? 0,
+        (paginatedOrderModel.orderCount?.pending ?? 0) + (paginatedOrderModel.orderCount?.accepted ?? 0)
+            + (paginatedOrderModel.orderCount?.confirmed ?? 0) + (paginatedOrderModel.orderCount?.processing ?? 0)
+            + (paginatedOrderModel.orderCount?.handover ?? 0),
+        paginatedOrderModel.orderCount?.pickedUp ?? 0,
       ];
     }
     update();
   }
 
+  /// Points the controller at [orderId] and drops whatever belonged to the
+  /// previously opened order, so a screen never renders a mix of two orders.
+  ///
+  /// Deliberately does not call update(): it runs from initState, where a
+  /// synchronous rebuild would throw "setState() called during build". The
+  /// fetches that follow it repaint once their data lands.
+  void setActiveOrder(int? orderId) {
+    if(_activeOrderId != orderId) {
+      _activeOrderId = orderId;
+      _orderModel = null;
+      _orderDetailsModel = null;
+    }
+  }
+
   Future<void> getOrderWithId(int? orderId) async {
+    setActiveOrder(orderId);
     OrderModel? orderModel = await orderServiceInterface.getOrderWithId(orderId);
+    if(_activeOrderId != orderId) {
+      return;
+    }
     if(orderModel != null) {
       _orderModel = orderModel;
     }
@@ -241,7 +275,12 @@ class OrderController extends GetxController implements GetxService {
     update();
   }
 
-  Future<bool> updateOrderStatus(int? orderId, String status, {bool back = false,  String? reason}) async {
+  /// Performs the status change only. Navigation is left to the caller so a
+  /// swipe on the details screen no longer pops the screen out from under it.
+  Future<bool> updateOrderStatus(int? orderId, String status, {String? reason}) async {
+    if(_isLoading) {
+      return false;
+    }
     _isLoading = true;
     update();
     List<MultipartBody> multiParts = orderServiceInterface.prepareOrderProofImages(_pickedPrescriptions);
@@ -250,24 +289,27 @@ class OrderController extends GetxController implements GetxService {
       otp: status == 'delivered' ? _otp : null, reason: reason,
     );
     ResponseModel responseModel = await orderServiceInterface.updateOrderStatus(updateStatusBody, multiParts);
-    Get.back(result: responseModel.isSuccess);
+    _isLoading = false;
+    update();
     if(responseModel.isSuccess) {
-      if(back) {
-        Get.back();
+      if(orderId == _activeOrderId) {
+        await getOrderWithId(orderId);
       }
-      getCurrentOrders(status: selectedRunningOrderStatus!);
+      await getCurrentOrders(status: _selectedRunningOrderStatus ?? 'all', isDataClear: false);
       showCustomSnackBar(responseModel.message, isError: false);
     }else {
       showCustomSnackBar(responseModel.message, isError: true);
     }
-    _isLoading = false;
-    update();
     return responseModel.isSuccess;
   }
 
   Future<void> getOrderDetails(int? orderID) async {
+    setActiveOrder(orderID);
     _orderDetailsModel = null;
     List<OrderDetailsModel>? orderDetailsModel = await orderServiceInterface.getOrderDetails(orderID);
+    if(_activeOrderId != orderID) {
+      return;
+    }
     if(orderDetailsModel != null) {
       _orderDetailsModel = [];
       _orderDetailsModel!.addAll(orderDetailsModel);
@@ -275,18 +317,42 @@ class OrderController extends GetxController implements GetxService {
     update();
   }
 
-  Future<bool> acceptOrder(int? orderID, int index, OrderModel orderModel) async {
+  /// Used by the incoming request popup. Writes to its own field so it can
+  /// never replace the item list of the order already open on screen.
+  Future<void> getRequestOrderDetails(int? orderID) async {
+    // Same reason as setActiveOrder: this is kicked off from initState.
+    _requestOrderId = orderID;
+    _requestOrderDetailsModel = null;
+    List<OrderDetailsModel>? orderDetailsModel = await orderServiceInterface.getOrderDetails(orderID);
+    if(_requestOrderId != orderID) {
+      return;
+    }
+    if(orderDetailsModel != null) {
+      _requestOrderDetailsModel = [];
+      _requestOrderDetailsModel!.addAll(orderDetailsModel);
+    }
+    update();
+  }
+
+  Future<bool> acceptOrder(int? orderID, OrderModel orderModel) async {
+    if(_isLoading) {
+      return false;
+    }
     _isLoading = true;
     update();
     ResponseModel responseModel = await orderServiceInterface.acceptOrder(orderID);
-    Get.back();
+    _isLoading = false;
     if(responseModel.isSuccess) {
-      _latestOrderList!.removeAt(index);
-      _currentOrderList!.add(orderModel);
+      // Match on id, never on list position: the request list is refreshed on a
+      // timer, so an index captured at build time can point at another order.
+      _latestOrderList?.removeWhere((order) => order.id == orderID);
+      _currentOrderList ??= [];
+      if(!_currentOrderList!.any((order) => order.id == orderID)) {
+        _currentOrderList!.add(orderModel);
+      }
     }else {
       showCustomSnackBar(responseModel.message, isError: true);
     }
-    _isLoading = false;
     update();
     return responseModel.isSuccess;
   }
@@ -296,9 +362,12 @@ class OrderController extends GetxController implements GetxService {
     _ignoredRequests.addAll(orderServiceInterface.getIgnoreList());
   }
 
-  void ignoreOrder(int index) {
-    _ignoredRequests.add(IgnoreModel(id: _latestOrderList![index].id, time: DateTime.now()));
-    _latestOrderList!.removeAt(index);
+  void ignoreOrder(int? orderId) {
+    if(orderId == null) {
+      return;
+    }
+    _ignoredRequests.add(IgnoreModel(id: orderId, time: DateTime.now()));
+    _latestOrderList?.removeWhere((order) => order.id == orderId);
     orderServiceInterface.setIgnoreList(_ignoredRequests);
     update();
   }

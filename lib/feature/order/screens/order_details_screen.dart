@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_asset_image_widget.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_bottom_sheet_widget.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_card.dart';
-import 'package:stackfood_multivendor_driver/common/widgets/custom_confirmation_bottom_sheet.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_tool_tip_widget.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/details_custom_card.dart';
 import 'package:stackfood_multivendor_driver/feature/language/controllers/localization_controller.dart';
@@ -59,8 +58,29 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   Timer? _timer;
   int? orderPosition;
 
+  /// Screen-local copies. The controller holds a single order at a time, so a
+  /// second details screen (or an incoming request) would otherwise repaint
+  /// this one with another order's items and quantities.
+  OrderModel? _order;
+  List<OrderDetailsModel>? _details;
+  bool _wasCurrentRoute = true;
+
+  bool get _isCurrentRoute => mounted && (ModalRoute.of(context)?.isCurrent ?? true);
+
   void _startApiCalling(){
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if(!_isCurrentRoute) {
+        _wasCurrentRoute = false;
+        return;
+      }
+      if(!_wasCurrentRoute) {
+        // Came back from a pushed screen: another order may have taken over
+        // the controller, so reload this one in full.
+        _wasCurrentRoute = true;
+        _loadData();
+        return;
+      }
       Get.find<OrderController>().getOrderWithId(widget.orderId);
     });
   }
@@ -70,10 +90,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     if(Get.find<OrderController>().showDeliveryImageField){
       Get.find<OrderController>().changeDeliveryImageStatus(isUpdate: false);
     }
+    Get.find<OrderController>().setActiveOrder(widget.orderId);
     if(widget.orderIndex == null){
-      await Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
-      for(int index=0; index<Get.find<OrderController>().currentOrderList!.length; index++) {
-        if(Get.find<OrderController>().currentOrderList![index].id == widget.orderId){
+      await Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus ?? 'all', isDataClear: false);
+      final List<OrderModel> currentOrders = Get.find<OrderController>().currentOrderList ?? [];
+      for(int index=0; index<currentOrders.length; index++) {
+        if(currentOrders[index].id == widget.orderId){
           orderPosition = index;
           break;
         }
@@ -95,14 +117,87 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   @override
   void dispose() {
-    super.dispose();
     _timer?.cancel();
+    super.dispose();
+  }
+
+  /// A partial payment whose remaining half is still due in cash. Guarded on
+  /// length because `payments` is not always the two-entry list assumed here.
+  bool _isPartialCod(OrderModel order) => order.paymentMethod == 'partial_payment'
+      && (order.payments?.length ?? 0) > 1 && order.payments![1].paymentMethod == 'cash_on_delivery';
+
+  bool _isCod(OrderModel order) => order.paymentMethod == 'cash_on_delivery' || _isPartialCod(order);
+
+  double? _dueAmount(OrderModel order) => (order.paymentMethod == 'partial_payment' && (order.payments?.length ?? 0) > 1)
+      ? order.payments![1].amount?.toDouble() : order.orderAmount;
+
+  void _openCollectMoneySheet(OrderModel order, {required bool isDismissible}) {
+    Get.bottomSheet(
+      CollectMoneyDeliverySheetWidget(
+        orderID: order.id, verify: Get.find<SplashController>().configModel!.orderDeliveryVerification,
+        orderAmount: _dueAmount(order), cod: _isCod(order),
+      ),
+      isScrollControlled: true, isDismissible: isDismissible,
+    );
+  }
+
+  void _startDeliveryFlow(OrderModel order) {
+    final bool verify = Get.find<SplashController>().configModel!.orderDeliveryVerification ?? false;
+
+    if(verify) {
+      Get.find<NotificationController>().sendDeliveredNotification(order.id);
+
+      Get.bottomSheet(VerifyDeliverySheetWidget(
+        orderID: order.id, verify: true,
+        orderAmount: _dueAmount(order), cod: _isCod(order),
+      ), isScrollControlled: true).then((isSuccess) {
+        // isSuccess is null when the sheet is dismissed by dragging.
+        if(isSuccess == true && _isCod(order)) {
+          _openCollectMoneySheet(order, isDismissible: false);
+        }
+      });
+    } else {
+      _openCollectMoneySheet(order, isDismissible: true);
+    }
+  }
+
+  void _onDeliverSwipe(OrderModel order) {
+    final configModel = Get.find<SplashController>().configModel!;
+
+    if((configModel.orderDeliveryVerification ?? false) || _isCod(order)) {
+      Get.find<OrderController>().changeDeliveryImageStatus();
+      if(configModel.dmPictureUploadStatus ?? false) {
+        showCustomBottomSheet(child: DialogImageWidget());
+      } else {
+        _startDeliveryFlow(order);
+      }
+    } else {
+      Get.find<OrderController>().updateOrderStatus(order.id, 'delivered').then((success) {
+        if(success) {
+          Get.find<ProfileController>().getProfile();
+          Get.offAllNamed(RouteHelper.getInitialRoute());
+        }
+      });
+    }
+  }
+
+  void _onPickUpSwipe(OrderModel order) {
+    if(Get.find<ProfileController>().profileModel?.active != 1) {
+      showCustomSnackBar('make_yourself_online_first'.tr);
+      return;
+    }
+    // Deliberately stays on this screen: the controller refreshes the order and
+    // the slider flips over to "swipe to deliver".
+    Get.find<OrderController>().updateOrderStatus(order.id, 'picked_up').then((success) {
+      if(success) {
+        Get.find<ProfileController>().getProfile();
+      }
+    });
   }
   @override
   Widget build(BuildContext context) {
 
     bool? cancelPermission = Get.find<SplashController>().configModel!.canceledByDeliveryman;
-    bool selfDelivery = Get.find<ProfileController>().profileModel!.type != 'zone_wise';
 
     return PopScope(
       canPop: Navigator.canPop(context),
@@ -123,7 +218,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               ),
 
               Text(
-                '${'order_is'.tr} ${orderController.orderModel?.orderStatus?.tr ?? ''}',
+                // Reads the screen-local copy, not the controller, so the title
+                // can never show a status belonging to a different order.
+                '${'order_is'.tr} ${_order?.orderStatus?.tr ?? ''}',
                 style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor),
               ),
             ]),
@@ -149,13 +246,21 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             padding: const EdgeInsets.all(0),
             child: GetBuilder<OrderController>(builder: (orderController) {
 
-              OrderModel? controllerOrderModel = orderController.orderModel;
+              // Only adopt controller data that actually belongs to this order.
+              if(orderController.activeOrderId == widget.orderId) {
+                if(orderController.orderModel != null) {
+                  _order = orderController.orderModel;
+                }
+                if(orderController.orderDetailsModel != null) {
+                  _details = orderController.orderDetailsModel;
+                }
+              }
 
-              bool restConfModel = Get.find<SplashController>().configModel!.orderConfirmationModel != 'deliveryman';
+              OrderModel? controllerOrderModel = _order;
 
               late bool showBottomView;
               late bool showSlider;
-              bool showDeliveryConfirmImage = orderController.showDeliveryImageField && Get.find<SplashController>().configModel!.dmPictureUploadStatus!;
+              bool showDeliveryConfirmImage = orderController.showDeliveryImageField && (Get.find<SplashController>().configModel!.dmPictureUploadStatus ?? false);
 
               double? deliveryCharge = 0;
               double itemsPrice = 0;
@@ -170,38 +275,45 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               double referrerBonusAmount = 0;
               OrderModel? order = controllerOrderModel;
 
-              if(order != null && orderController.orderDetailsModel != null ) {
+              if(order != null && _details != null ) {
 
                 if(order.orderType == 'delivery') {
                   deliveryCharge = order.deliveryCharge;
                   dmTips = order.dmTips;
                 }
-                discount = order.restaurantDiscountAmount;
-                tax = order.totalTaxAmount;
-                taxIncluded = order.taxStatus;
-                couponDiscount = order.couponDiscountAmount;
-                additionalCharge = order.additionalCharge!;
-                extraPackagingAmount = order.extraPackagingAmount!;
-                referrerBonusAmount = order.referrerBonusAmount!;
-                for(OrderDetailsModel orderDetails in orderController.orderDetailsModel!) {
-                  for(AddOn addOn in orderDetails.addOns!) {
-                    addOns = addOns + (addOn.price! * addOn.quantity!);
+                discount = order.restaurantDiscountAmount ?? 0;
+                tax = order.totalTaxAmount ?? 0;
+                taxIncluded = order.taxStatus ?? false;
+                couponDiscount = order.couponDiscountAmount ?? 0;
+                additionalCharge = order.additionalCharge ?? 0;
+                extraPackagingAmount = order.extraPackagingAmount ?? 0;
+                referrerBonusAmount = order.referrerBonusAmount ?? 0;
+                for(OrderDetailsModel orderDetails in _details!) {
+                  for(AddOn addOn in orderDetails.addOns ?? []) {
+                    addOns = addOns + ((addOn.price ?? 0) * (addOn.quantity ?? 0));
                   }
-                  itemsPrice = itemsPrice + (orderDetails.price! * orderDetails.quantity!);
+                  itemsPrice = itemsPrice + ((orderDetails.price ?? 0) * (orderDetails.quantity ?? 0));
                 }
               }
+              deliveryCharge ??= 0;
+              dmTips ??= 0;
               //double subTotal = itemsPrice + addOns;
-              double total = itemsPrice + addOns - discount! + (taxIncluded! ? 0 : tax!) + deliveryCharge! - couponDiscount! + dmTips! + additionalCharge + extraPackagingAmount - referrerBonusAmount;
+              double total = itemsPrice + addOns - discount + (taxIncluded ? 0 : tax) + deliveryCharge - couponDiscount + dmTips + additionalCharge + extraPackagingAmount - referrerBonusAmount;
+
+              // Simplified flow: once the rider has the order it is theirs to
+              // pick up. confirmed/processing/handover are kept only so orders
+              // created under the old store-driven flow still finish normally.
+              bool readyForPickUp = controllerOrderModel != null && (controllerOrderModel.orderStatus == 'accepted'
+                  || controllerOrderModel.orderStatus == 'confirmed' || controllerOrderModel.orderStatus == 'processing'
+                  || controllerOrderModel.orderStatus == 'handover');
+              bool pickedUp = controllerOrderModel?.orderStatus == 'picked_up';
 
               if(controllerOrderModel != null){
-                showBottomView = controllerOrderModel.orderStatus == 'accepted' || controllerOrderModel.orderStatus == 'confirmed'
-                    || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'handover'
-                    || controllerOrderModel.orderStatus == 'picked_up' || (widget.isRunningOrder ?? true);
-                showSlider = (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
-                    || controllerOrderModel.orderStatus == 'handover' || controllerOrderModel.orderStatus == 'picked_up';
+                showBottomView = readyForPickUp || pickedUp;
+                showSlider = readyForPickUp || pickedUp;
               }
 
-              return (orderController.orderDetailsModel != null && controllerOrderModel != null && order != null) ? Column(children: [
+              return (_details != null && controllerOrderModel != null && order != null) ? Column(children: [
 
                 Expanded(child: SingleChildScrollView(
                   child: Column(children: [
@@ -256,8 +368,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     InfoCardWidget(
                       title: 'customer_contact_details'.tr, addressModel: controllerOrderModel.deliveryAddress, isDelivery: true,
                       image: controllerOrderModel.customer != null ? '${controllerOrderModel.customer!.imageFullUrl}' : '',
-                      name: controllerOrderModel.deliveryAddress!.contactPersonName, phone: controllerOrderModel.deliveryAddress!.contactPersonNumber,
-                      latitude: controllerOrderModel.deliveryAddress!.latitude, longitude: controllerOrderModel.deliveryAddress!.longitude,
+                      name: controllerOrderModel.deliveryAddress?.contactPersonName, phone: controllerOrderModel.deliveryAddress?.contactPersonNumber,
+                      latitude: controllerOrderModel.deliveryAddress?.latitude, longitude: controllerOrderModel.deliveryAddress?.longitude,
                       showButton: (controllerOrderModel.orderStatus != 'delivered' && controllerOrderModel.orderStatus != 'failed' && controllerOrderModel.orderStatus != 'canceled'),
                       orderModel: controllerOrderModel,
                       messageOnTap: () async {
@@ -320,7 +432,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                           const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                           Text(
-                            '(${orderController.orderDetailsModel!.length.toString()})',
+                            '(${_details!.length})',
                             style: robotoRegular.copyWith(color: Theme.of(context).hintColor),
                           ),
 
@@ -330,9 +442,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: orderController.orderDetailsModel!.length,
+                          itemCount: _details!.length,
                           itemBuilder: (context, index) {
-                            return OrderProductWidgetWidget(order: controllerOrderModel, orderDetails: orderController.orderDetailsModel![index], showDivider: index != orderController.orderDetailsModel!.length - 1);
+                            return OrderProductWidgetWidget(order: controllerOrderModel, orderDetails: _details![index], showDivider: index != _details!.length - 1);
                           },
                         ),
 
@@ -540,6 +652,18 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         ]),
                         Divider(height: 25, color: Theme.of(context).hintColor.withValues(alpha: 0.3)),
 
+                        order.orderType != 'parcel' ? Column(children: [
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            Text('store_will_get'.tr, style: robotoRegular.copyWith(color: ColorResources.green)),
+                            Text(
+                              PriceConverter.convertPrice(orderController.orderModel?.storeWillGet ?? orderController.storeWillGet),
+                              style: robotoMedium.copyWith(color: ColorResources.green, fontWeight: FontWeight.bold),
+                              textDirection: TextDirection.ltr,
+                            ),
+                          ]),
+                          Divider(height: 25, color: Theme.of(context).hintColor.withValues(alpha: 0.3)),
+                        ]) : const SizedBox(),
+
                         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                           Text('total_amount'.tr, style: robotoMedium.copyWith(color: order.paymentMethod == 'partial_payment' ? Theme.of(context).textTheme.bodyLarge?.color : Theme.of(context).primaryColor)),
                           Text(
@@ -654,96 +778,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault, right: Dimensions.paddingSizeDefault, bottom: Dimensions.paddingSizeDefault),
                     child: CustomButtonWidget(
                       buttonText: 'complete_delivery'.tr,
-                      onPressed: () {
-
-                        if(Get.find<SplashController>().configModel!.orderDeliveryVerification!){
-                          Get.find<NotificationController>().sendDeliveredNotification(controllerOrderModel.id);
-
-                          Get.bottomSheet(VerifyDeliverySheetWidget(
-                            orderID: controllerOrderModel.id, verify: Get.find<SplashController>().configModel!.orderDeliveryVerification,
-                            orderAmount: order.paymentMethod == 'partial_payment' ? order.payments![1].amount!.toDouble() : controllerOrderModel.orderAmount,
-                            cod: controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery'),
-                          ), isScrollControlled: true).then((isSuccess) {
-
-                            if(isSuccess && controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery')){
-                              Get.bottomSheet(CollectMoneyDeliverySheetWidget(
-                                orderID: controllerOrderModel.id, verify: Get.find<SplashController>().configModel!.orderDeliveryVerification,
-                                orderAmount: order.paymentMethod == 'partial_payment' ? order.payments![1].amount!.toDouble() : controllerOrderModel.orderAmount,
-                                cod: controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery'),
-                              ), isScrollControlled: true, isDismissible: false);
-                            }
-                          });
-                        } else{
-                          Get.bottomSheet(CollectMoneyDeliverySheetWidget(
-                            orderID: controllerOrderModel.id, verify: Get.find<SplashController>().configModel!.orderDeliveryVerification,
-                            orderAmount: order.paymentMethod == 'partial_payment' ? order.payments![1].amount!.toDouble() : controllerOrderModel.orderAmount,
-                            cod: controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery'),
-                          ), isScrollControlled: true);
-                        }
-
-                      },
+                      onPressed: () => _startDeliveryFlow(order),
                     ),
-                  ) : showBottomView ? ((controllerOrderModel.orderStatus == 'accepted' && (controllerOrderModel.paymentMethod != 'cash_on_delivery' || restConfModel || selfDelivery))
-                      || controllerOrderModel.orderStatus == 'processing' || controllerOrderModel.orderStatus == 'confirmed') ? Container(
-                    padding: const EdgeInsets.all(Dimensions.paddingSizeExtraLarge),
-                    width: MediaQuery.of(context).size.width,
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                    alignment: Alignment.center,
-                    child: Column(children: [
-                      Text(
-                        controllerOrderModel.orderStatus == 'processing' ? 'food_is_preparing'.tr : 'food_waiting_for_cook'.tr,
-                        style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge),
-                      ),
-                      const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                      Text(
-                        controllerOrderModel.orderStatus == 'processing' ? 'when_it_is_ready_you_will_be_notified'.tr : 'when_it_is_ready_for_cooking_you_will_be_notified'.tr,
-                        style: robotoRegular.copyWith(color: Theme.of(context).hintColor),
-                      ),
-                    ]),
-                  ) : showSlider ? (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && cancelPermission! && !selfDelivery) ? CustomCard(
-                    padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                    isBorder: false,
-                    child: Row(children: [
-                      Expanded(child: TextButton(
-                        onPressed: (){
-                          orderController.setOrderCancelReason('');
-                          Get.dialog(CancellationDialogueWidget(orderId: widget.orderId));
-                        },
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(1170, 40), padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                            side: BorderSide(width: 1, color: Theme.of(context).textTheme.bodyLarge!.color!),
-                          ),
-                        ),
-                        child: Text('cancel'.tr, textAlign: TextAlign.center, style: robotoRegular.copyWith(
-                          color: Theme.of(context).textTheme.titleSmall!.color,
-                          fontSize: Dimensions.fontSizeLarge,
-                        )),
-                      )),
-                      const SizedBox(width: Dimensions.paddingSizeSmall),
-                      Expanded(child: CustomButtonWidget(
-                        buttonText: 'confirm'.tr, height: 40,
-                        onPressed: () {
-                          showCustomBottomSheet(
-                            child: CustomConfirmationBottomSheet(
-                              title: 'are_you_sure_to_confirm'.tr,
-                              description: 'you_want_to_confirm_this_order'.tr,
-                              onConfirm: () {
-                                orderController.updateOrderStatus(controllerOrderModel.id, 'confirmed', back: true).then((success) {
-                                  if(success) {
-                                    Get.find<ProfileController>().getProfile();
-                                    Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
-                                  }
-                                });
-                              },
-                            ),
-                          );
-                        },
-                      )),
-                    ]),
-                  ) : CustomCard(
+                  ) : (showBottomView && showSlider) ? CustomCard(
                     padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                     isBorder: false,
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -757,93 +794,52 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
 
                         Text(
-                          PriceConverter.convertPrice(order.paymentMethod == 'partial_payment' && order.payments?[1].paymentMethod == 'cash_on_delivery' ? order.payments![1].amount : order.paymentMethod == 'cash_on_delivery' ? total : 0),
+                          PriceConverter.convertPrice(_isPartialCod(order) ? order.payments![1].amount : order.paymentMethod == 'cash_on_delivery' ? total : 0),
                           style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor),
                         ),
 
                       ]),
 
-                      order.paymentMethod == 'cash_on_delivery' ? SizedBox() : order.paymentMethod == 'partial_payment' && order.payments?[1].paymentMethod != 'cash_on_delivery' ? Padding(
+                      order.paymentMethod == 'cash_on_delivery' ? SizedBox() : (order.paymentMethod == 'partial_payment' && !_isPartialCod(order)) ? Padding(
                         padding: const EdgeInsets.only(left: 23),
                         child: Text('already_paid'.tr, style: robotoBold.copyWith(color: Theme.of(context).hintColor, fontSize: Dimensions.fontSizeSmall)),
                       ) : const SizedBox(),
                       SizedBox(height: Dimensions.paddingSizeSmall),
 
+                      // Cancelling is only offered before pick up, matching the
+                      // backend rule that an order can no longer be dropped once
+                      // the rider has collected it.
+                      (readyForPickUp && (cancelPermission ?? false)) ? Padding(
+                        padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
+                        child: TextButton(
+                          onPressed: (){
+                            orderController.setOrderCancelReason('');
+                            Get.dialog(CancellationDialogueWidget(orderId: widget.orderId));
+                          },
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(1170, 40), padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
+                              side: BorderSide(width: 1, color: Theme.of(context).textTheme.bodyLarge!.color!),
+                            ),
+                          ),
+                          child: Text('cancel'.tr, textAlign: TextAlign.center, style: robotoRegular.copyWith(
+                            color: Theme.of(context).textTheme.titleSmall!.color,
+                            fontSize: Dimensions.fontSizeLarge,
+                          )),
+                        ),
+                      ) : const SizedBox(),
+
                       SliderButtonWidget(
                         action: () {
-                          if(controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery) {
-                            showCustomBottomSheet(
-                              child: CustomConfirmationBottomSheet(
-                                title: 'are_you_sure_to_confirm'.tr,
-                                description: 'you_want_to_confirm_this_order'.tr,
-                                onConfirm: () {
-                                  orderController.updateOrderStatus(controllerOrderModel.id, 'confirmed', back: true).then((success) {
-                                    if(success) {
-                                      Get.find<ProfileController>().getProfile();
-                                      Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
-                                    }
-                                  });
-                                },
-                              ),
-                            );
-                          }else if(controllerOrderModel.orderStatus == 'picked_up') {
-                            if(Get.find<SplashController>().configModel!.orderDeliveryVerification! || controllerOrderModel.paymentMethod == 'cash_on_delivery') {
-                              orderController.changeDeliveryImageStatus();
-                              if(Get.find<SplashController>().configModel!.dmPictureUploadStatus!) {
-                                showCustomBottomSheet(child: DialogImageWidget());
-                              } else {
-                                if(Get.find<SplashController>().configModel!.orderDeliveryVerification!){
-                                  Get.find<NotificationController>().sendDeliveredNotification(controllerOrderModel.id);
-
-                                  Get.bottomSheet(VerifyDeliverySheetWidget(
-                                    orderID: controllerOrderModel.id, verify: Get.find<SplashController>().configModel!.orderDeliveryVerification,
-                                    orderAmount: order.paymentMethod == 'partial_payment' ? order.payments![1].amount!.toDouble() : controllerOrderModel.orderAmount,
-                                    cod: controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery'),
-                                  ), isScrollControlled: true).then((isSuccess) {
-
-
-                                    if(isSuccess && controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery')){
-                                      Get.bottomSheet(CollectMoneyDeliverySheetWidget(
-                                        orderID: controllerOrderModel.id, verify: Get.find<SplashController>().configModel!.orderDeliveryVerification,
-                                        orderAmount: order.paymentMethod == 'partial_payment' ? order.payments![1].amount!.toDouble() : controllerOrderModel.orderAmount,
-                                        cod: controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery'),
-                                      ), isScrollControlled: true, isDismissible: false);
-                                    }
-                                  });
-                                } else {
-                                  Get.bottomSheet(CollectMoneyDeliverySheetWidget(
-                                    orderID: controllerOrderModel.id, verify: Get.find<SplashController>().configModel!.orderDeliveryVerification,
-                                    orderAmount: order.paymentMethod == 'partial_payment' ? order.payments![1].amount!.toDouble() : controllerOrderModel.orderAmount,
-                                    cod: controllerOrderModel.paymentMethod == 'cash_on_delivery' || (order.paymentMethod == 'partial_payment' && order.payments![1].paymentMethod == 'cash_on_delivery'),
-                                  ), isScrollControlled: true);
-                                }
-                              }
-
-                            }else {
-                              Get.find<OrderController>().updateOrderStatus(controllerOrderModel.id, 'delivered').then((success) {
-                                if(success) {
-                                  Get.find<ProfileController>().getProfile();
-                                  Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
-                                }
-                              });
-                            }
-                          }else if(controllerOrderModel.orderStatus == 'handover') {
-                            if(Get.find<ProfileController>().profileModel!.active == 1) {
-                              Get.find<OrderController>().updateOrderStatus(controllerOrderModel.id, 'picked_up').then((success) {
-                                if(success) {
-                                  Get.find<ProfileController>().getProfile();
-                                  Get.find<OrderController>().getCurrentOrders(status: Get.find<OrderController>().selectedRunningOrderStatus!);
-                                }
-                              });
-                            }else {
-                              showCustomSnackBar('make_yourself_online_first'.tr);
-                            }
+                          if(pickedUp) {
+                            _onDeliverSwipe(order);
+                          }else if(readyForPickUp) {
+                            _onPickUpSwipe(order);
                           }
                         },
                         label: Text(
-                          (controllerOrderModel.paymentMethod == 'cash_on_delivery' && controllerOrderModel.orderStatus == 'accepted' && !restConfModel && !selfDelivery)
-                              ? 'swipe_to_confirm_order'.tr : controllerOrderModel.orderStatus == 'picked_up' ? 'swipe_to_deliver_order'.tr
-                              : controllerOrderModel.orderStatus == 'handover' ? 'swipe_to_pick_up_order'.tr : '',
+                          pickedUp ? 'swipe_to_deliver_order'.tr : 'swipe_to_pick_up_order'.tr,
                           style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor),
                         ),
                         dismissThresholds: 0.5, dismissible: false, shimmer: true,
@@ -859,7 +855,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         baseColor: Theme.of(context).primaryColor,
                       ),
                     ]),
-                  ) : const SizedBox() : const SizedBox(),
+                  ) : const SizedBox(),
                 ),
 
               ]) : OrderDetailsShimmer();

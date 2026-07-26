@@ -97,7 +97,7 @@ class ProfileRepository implements ProfileRepositoryInterface {
   @override
   Future<List<ShiftModel>?> getShiftList() async {
     List<ShiftModel>? shifts;
-    Response response = await apiClient.getData('${AppConstants.shiftUri}${_getUserToken()}');
+    Response response = await apiClient.getData('${AppConstants.shiftUri}${_getUserToken()}', handleError: false);
     if (response.statusCode == 200) {
       shifts = [];
       response.body.forEach((shift) => shifts!.add(ShiftModel.fromJson(shift)));

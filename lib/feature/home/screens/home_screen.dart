@@ -6,9 +6,13 @@ import 'package:stackfood_multivendor_driver/feature/order/controllers/order_con
 import 'package:stackfood_multivendor_driver/feature/home/widgets/count_card_widget.dart';
 import 'package:stackfood_multivendor_driver/feature/home/widgets/earning_widget.dart';
 import 'package:stackfood_multivendor_driver/feature/order/screens/running_order_screen.dart';
+import 'package:stackfood_multivendor_driver/feature/home/widgets/online_status_widget.dart';
+import 'package:stackfood_multivendor_driver/feature/home/widgets/rank_card_widget.dart';
 import 'package:stackfood_multivendor_driver/feature/profile/controllers/profile_controller.dart';
+import 'package:stackfood_multivendor_driver/feature/rider_rank/controllers/rider_rank_controller.dart';
 import 'package:stackfood_multivendor_driver/helper/price_converter_helper.dart';
 import 'package:stackfood_multivendor_driver/helper/route_helper.dart';
+import 'package:stackfood_multivendor_driver/util/app_constants.dart';
 import 'package:stackfood_multivendor_driver/util/color_resources.dart';
 import 'package:stackfood_multivendor_driver/util/dimensions.dart';
 import 'package:stackfood_multivendor_driver/util/images.dart';
@@ -82,6 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await Get.find<OrderController>().getCurrentOrders(status: 'all', isDataClear: false);
     await Get.find<OrderController>().getCompletedOrders(offset: 1, status: 'all', isUpdate: false);
     await Get.find<NotificationController>().getNotificationList();
+    Get.find<RiderRankController>().getRiderRank();
   }
 
   Future<void> checkPermission() async {
@@ -161,8 +166,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Image.asset(Images.logo, height: 30, width: 30),
         ),
         titleSpacing: 0,
-        title: Image.asset(Images.logoName, width: 120),
+        title: Text(AppConstants.appName, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge)),
         actions: [
+
+          const OnlineStatusWidget(),
 
           IconButton(
             icon: GetBuilder<NotificationController>(builder: (notificationController) {
@@ -218,26 +225,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Column(children: [
 
                     GetBuilder<OrderController>(builder: (orderController) {
-                      bool hasActiveOrder = orderController.currentOrderList == null || orderController.currentOrderList!.isNotEmpty;
-                      bool hasMoreOrder = orderController.currentOrderList != null && orderController.currentOrderList!.length > 1;
+                      bool isLoading = orderController.currentOrderList == null;
+                      bool hasActiveOrder = !isLoading && orderController.currentOrderList!.isNotEmpty;
+                      bool hasMoreOrder = !isLoading && orderController.currentOrderList!.length > 1;
                       return Column(children: [
 
-                        hasActiveOrder ? TitleWidget(
+                        TitleWidget(
                           title: 'active_order'.tr, onTap: hasMoreOrder ? () {
                             Get.toNamed(RouteHelper.getRunningOrderRoute(), arguments: const RunningOrderScreen());
                           } : null,
-                        ) : const SizedBox(),
-                        SizedBox(height: hasActiveOrder ? Dimensions.paddingSizeSmall : 0),
-
-                        orderController.currentOrderList != null ? orderController.currentOrderList!.isNotEmpty ? OrderWidget(
-                          orderModel: orderController.currentOrderList![0], isRunningOrder: true, orderIndex: 0,
-                        ) : const SizedBox() : OrderShimmerWidget(
-                          isEnabled: orderController.currentOrderList == null,
                         ),
-                        SizedBox(height: hasActiveOrder ? Dimensions.paddingSizeDefault : 0),
+                        const SizedBox(height: Dimensions.paddingSizeSmall),
+
+                        isLoading ? const OrderShimmerWidget(isEnabled: true)
+                            : hasActiveOrder ? OrderWidget(
+                              orderModel: orderController.currentOrderList![0], isRunningOrder: true, orderIndex: 0,
+                            ) : Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeLarge),
+                                child: Text('no_active_order'.tr, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
+                              ),
+                            ),
+                        const SizedBox(height: Dimensions.paddingSizeDefault),
 
                       ]);
                     }),
+
+                    const RankCardWidget(),
+                    const SizedBox(height: Dimensions.paddingSizeDefault),
 
                     (profileController.profileModel != null && profileController.profileModel!.earnings == 1) ? Column(children: [
 

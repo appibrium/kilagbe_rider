@@ -1,45 +1,116 @@
 {
   "project_info": {
-    "project_number": "189248694073",
-    "project_id": "khanapina-880ea",
-    "storage_bucket": "khanapina-880ea.firebasestorage.app"
+    "project_number": "530748973372",
+    "firebase_url": "https://ki-lagbe-23b44-default-rtdb.firebaseio.com",
+    "project_id": "ki-lagbe-23b44",
+    "storage_bucket": "ki-lagbe-23b44.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:189248694073:android:fd3ef4a3251bc2fbb0eae8",
+        "mobilesdk_app_id": "1:530748973372:android:3fc129850338091e307e39",
         "android_client_info": {
-          "package_name": "com.itflor.khanapina"
+          "package_name": "com.kilagbe.rider"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA_Rq_phkxtT9FjtLhnmuLfQGzsfavv4So"
+          "current_key": "AIzaSyBulOGcMODhkU8vnLJzu8ZU5ox7J9BLyjc"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530748973372-ef4ec05jj1cpc5tamh27qf3bg461l1uq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kilagbe.rider"
+              }
+            }
+          ]
         }
       }
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:189248694073:android:817858e96d5c9ceeb0eae8",
+        "mobilesdk_app_id": "1:530748973372:android:c69635da2c3be639307e39",
         "android_client_info": {
-          "package_name": "com.khanapina.rider"
+          "package_name": "com.kilagbe.store"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA_Rq_phkxtT9FjtLhnmuLfQGzsfavv4So"
+          "current_key": "AIzaSyBulOGcMODhkU8vnLJzu8ZU5ox7J9BLyjc"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530748973372-ef4ec05jj1cpc5tamh27qf3bg461l1uq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kilagbe.rider"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:530748973372:android:93fe118b305741b1307e39",
+        "android_client_info": {
+          "package_name": "com.rhrsoft.kilagbe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBulOGcMODhkU8vnLJzu8ZU5ox7J9BLyjc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530748973372-ef4ec05jj1cpc5tamh27qf3bg461l1uq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kilagbe.rider"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:530748973372:android:cccd6c195f2db148307e39",
+        "android_client_info": {
+          "package_name": "com.rhrsoft.kilagbenew"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBulOGcMODhkU8vnLJzu8ZU5ox7J9BLyjc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "530748973372-ef4ec05jj1cpc5tamh27qf3bg461l1uq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kilagbe.rider"
+              }
+            }
+          ]
         }
       }
     }

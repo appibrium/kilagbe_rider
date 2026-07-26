@@ -13,6 +13,7 @@ import 'package:stackfood_multivendor_driver/feature/chat/screens/conversation_s
 import 'package:stackfood_multivendor_driver/feature/dashboard/screens/dashboard_screen.dart';
 import 'package:stackfood_multivendor_driver/feature/disbursements/screens/add_withdraw_method_screen.dart';
 import 'package:stackfood_multivendor_driver/feature/disbursements/screens/disbursement_screen.dart';
+import 'package:stackfood_multivendor_driver/feature/rider_rank/screens/rider_rank_screen.dart';
 import 'package:stackfood_multivendor_driver/feature/disbursements/screens/withdraw_method_screen.dart';
 import 'package:stackfood_multivendor_driver/feature/forgot_password/screens/forgot_password_screen.dart';
 import 'package:stackfood_multivendor_driver/feature/forgot_password/screens/new_password_screen.dart';
@@ -52,6 +53,7 @@ class RouteHelper {
   static const String incentive = '/incentive';
   static const String myAccount = '/my-account';
   static const String disbursement = '/disbursement';
+  static const String riderRank = '/rider-rank';
   static const String withdrawMethod = '/withdraw-method';
   static const String addWithdrawMethod = '/add-withdraw-method';
   static const String success = '/success';
@@ -109,6 +111,7 @@ class RouteHelper {
   static String getIncentiveRoute() => incentive;
   static String getMyAccountRoute() => myAccount;
   static String getDisbursementRoute() => disbursement;
+  static String getRiderRankRoute() => riderRank;
   static String getWithdrawMethodRoute({bool isFromDashBoard = false}) => '$withdrawMethod?is_from_dashboard=${isFromDashBoard.toString()}';
   static String getAddWithdrawMethodRoute() => addWithdrawMethod;
   static String getSuccessRoute(String status) => '$success?status=$status';
@@ -181,6 +184,7 @@ class RouteHelper {
     GetPage(name: incentive, page: () => const IncentiveScreen()),
     GetPage(name: myAccount, page: () => const MyAccountScreen()),
     GetPage(name: disbursement, page: () => const DisbursementScreen()),
+    GetPage(name: riderRank, page: () => const RiderRankScreen()),
     GetPage(name: withdrawMethod, page: () => WithdrawMethodScreen(isFromDashboard: Get.parameters['is_from_dashboard'] == 'true')),
     GetPage(name: addWithdrawMethod, page: () => const AddWithDrawMethodScreen()),
     GetPage(name: success, page: () => PaymentSuccessfulScreen(success: Get.parameters['status'] == 'success')),

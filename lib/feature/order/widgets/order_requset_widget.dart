@@ -33,7 +33,7 @@ class OrderRequestWidget extends StatelessWidget {
   Widget build(BuildContext context) {
 
     double distance = Get.find<AddressController>().getRestaurantDistance(
-      LatLng(double.parse(orderModel.restaurantLat!), double.parse(orderModel.restaurantLng!)),
+      LatLng(double.tryParse(orderModel.restaurantLat ?? '') ?? 0, double.tryParse(orderModel.restaurantLng ?? '') ?? 0),
     );
 
     return CustomCard(
@@ -56,7 +56,7 @@ class OrderRequestWidget extends StatelessWidget {
                   color: Get.isDarkMode ? Theme.of(context).hintColor : Theme.of(context).hintColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
                 ),
                 child: Text(
-                  PriceConverter.convertPrice(orderModel.originalDeliveryCharge! + orderModel.dmTips!),
+                  PriceConverter.convertPrice((orderModel.originalDeliveryCharge ?? 0) + (orderModel.dmTips ?? 0)),
                   style: robotoMedium,
                 ),
               ) : const SizedBox(),
@@ -96,7 +96,7 @@ class OrderRequestWidget extends StatelessWidget {
                     const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                     Text(
-                      '${orderModel.detailsCount} ${orderModel.detailsCount! > 1 ? 'items'.tr : 'item'.tr}',
+                      '${orderModel.detailsCount ?? 0} ${(orderModel.detailsCount ?? 0) > 1 ? 'items'.tr : 'item'.tr}',
                       style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
                     ),
                     const SizedBox(height: Dimensions.paddingSizeExtraSmall),
@@ -242,7 +242,7 @@ class OrderRequestWidget extends StatelessWidget {
                             description: 'ignore_order_description'.tr,
                             confirmButtonText: 'ignore'.tr,
                             onConfirm: (){
-                              orderController.ignoreOrder(index);
+                              orderController.ignoreOrder(orderModel.id);
                               Get.back();
                               showCustomSnackBar('order_ignored'.tr, isError: false);
                             },
@@ -275,15 +275,15 @@ class OrderRequestWidget extends StatelessWidget {
                             title: 'accept_this_order'.tr,
                             description: 'make_sure_your_availability_to_deliver_this_order_on_time_before_accept'.tr,
                             onConfirm: (){
-                              orderController.acceptOrder(orderModel.id, index, orderModel).then((isSuccess) {
+                              orderController.acceptOrder(orderModel.id, orderModel).then((isSuccess) {
+                                Get.back();
                                 if(isSuccess) {
                                   onTap();
                                   orderModel.orderStatus = (orderModel.orderStatus == 'pending' || orderModel.orderStatus == 'confirmed') ? 'accepted' : orderModel.orderStatus;
-                                  Get.back();
                                   Get.toNamed(
                                     RouteHelper.getOrderDetailsRoute(orderModel.id),
                                     arguments: OrderDetailsScreen(
-                                      orderId: orderModel.id, isRunningOrder: true, orderIndex: orderController.currentOrderList!.length-1,
+                                      orderId: orderModel.id, isRunningOrder: true, orderIndex: null,
                                     ),
                                   );
                                 }else {

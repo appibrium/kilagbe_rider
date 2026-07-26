@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 class OrderDetailsModel {
   int? id;
   int? foodId;
   int? orderId;
   double? price;
   FoodDetails? foodDetails;
+  String? imageFullUrl;
   List<Variation>? variation;
   List<OldVariation>? oldVariation;
   List<AddOn>? addOns;
@@ -16,6 +19,7 @@ class OrderDetailsModel {
   String? updatedAt;
   int? itemCampaignId;
   double? totalAddOnPrice;
+  double? storeWillGet;
 
   OrderDetailsModel({
     this.id,
@@ -23,6 +27,7 @@ class OrderDetailsModel {
     this.orderId,
     this.price,
     this.foodDetails,
+    this.imageFullUrl,
     this.variation,
     this.oldVariation,
     this.addOns,
@@ -35,14 +40,20 @@ class OrderDetailsModel {
     this.updatedAt,
     this.itemCampaignId,
     this.totalAddOnPrice,
+    this.storeWillGet,
   });
 
   OrderDetailsModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    foodId = json['food_id'];
+    foodId = json['item_id'] ?? json['food_id'];
     orderId = json['order_id'];
-    price = json['price'].toDouble();
-    foodDetails = json['food_details'] != null ? FoodDetails.fromJson(json['food_details']) : null;
+    price = json['price']?.toDouble();
+    dynamic details = json['item_details'] ?? json['food_details'];
+    if(details is String && details.isNotEmpty) {
+      details = jsonDecode(details);
+    }
+    foodDetails = details is Map<String, dynamic> ? FoodDetails.fromJson(details) : null;
+    imageFullUrl = json['image_full_url'];
     variation = [];
     oldVariation = [];
     if (json['variation'] != null && json['variation'].isNotEmpty) {
@@ -62,7 +73,7 @@ class OrderDetailsModel {
         addOns!.add(AddOn.fromJson(v));
       });
     }
-    discountOnFood = json['discount_on_food']?.toDouble();
+    discountOnFood = (json['discount_on_item'] ?? json['discount_on_food'])?.toDouble();
     discountType = json['discount_type'];
     quantity = json['quantity'];
     taxAmount = json['tax_amount']?.toDouble();
@@ -71,24 +82,26 @@ class OrderDetailsModel {
     updatedAt = json['updated_at'];
     itemCampaignId = json['item_campaign_id'];
     totalAddOnPrice = json['total_add_on_price']?.toDouble();
+    storeWillGet = json['store_will_get']?.toDouble();
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['id'] = id;
-    data['food_id'] = foodId;
+    data['item_id'] = foodId;
     data['order_id'] = orderId;
     data['price'] = price;
     if (foodDetails != null) {
-      data['food_details'] = foodDetails!.toJson();
+      data['item_details'] = foodDetails!.toJson();
     }
+    data['image_full_url'] = imageFullUrl;
     if (variation != null) {
       data['variation'] = variation!.map((v) => v.toJson()).toList();
     }
     if (addOns != null) {
       data['add_ons'] = addOns!.map((v) => v.toJson()).toList();
     }
-    data['discount_on_food'] = discountOnFood;
+    data['discount_on_item'] = discountOnFood;
     data['discount_type'] = discountType;
     data['quantity'] = quantity;
     data['tax_amount'] = taxAmount;
@@ -203,12 +216,12 @@ class FoodDetails {
     discountType = json['discount_type'];
     availableTimeStarts = json['available_time_starts'];
     availableTimeEnds = json['available_time_ends'];
-    restaurantId = json['restaurant_id'];
+    restaurantId = json['store_id'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
-    restaurantName = json['restaurant_name'];
-    restaurantDiscount = json['restaurant_discount']?.toDouble();
-    avgRating = json['avg_rating'].toDouble();
+    restaurantName = json['store_name'];
+    restaurantDiscount = json['store_discount']?.toDouble();
+    avgRating = json['avg_rating']?.toDouble();
     veg = json['veg'] != null ? int.parse(json['veg'].toString()) : 0;
     ratingCount = json['rating_count'];
   }

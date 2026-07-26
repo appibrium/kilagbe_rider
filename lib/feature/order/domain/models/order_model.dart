@@ -82,6 +82,7 @@ class OrderModel {
   double? extraPackagingAmount;
   double? referrerBonusAmount;
   double? bringChangeAmount;
+  double? storeWillGet;
 
   OrderModel({
     this.id,
@@ -130,6 +131,7 @@ class OrderModel {
     this.extraPackagingAmount,
     this.referrerBonusAmount,
     this.bringChangeAmount,
+    this.storeWillGet,
   });
 
   OrderModel.fromJson(Map<String, dynamic> json) {
@@ -145,21 +147,22 @@ class OrderModel {
     deliveryAddressId = json['delivery_address_id'];
     deliveryManId = json['delivery_man_id'];
     orderType = json['order_type'];
-    restaurantId = json['restaurant_id'];
+    restaurantId = json['store_id'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     deliveryCharge = json['delivery_charge']?.toDouble();
     originalDeliveryCharge = json['original_delivery_charge']?.toDouble();
     dmTips = json['dm_tips']?.toDouble();
     scheduleAt = json['schedule_at'];
-    restaurantName = json['restaurant_name'];
-    restaurantDiscountAmount = json['restaurant_discount_amount']?.toDouble();
-    restaurantAddress = json['restaurant_address'];
-    restaurantLat = json['restaurant_lat'];
-    restaurantLng = json['restaurant_lng'];
-    restaurantLogoFullUrl = json['restaurant_logo_full_url'];
-    restaurantPhone = json['restaurant_phone'];
-    restaurantDeliveryTime = json['restaurant_delivery_time'];
+    restaurantName = json['store_name'];
+    restaurantDiscountAmount = json['store_discount_amount']?.toDouble();
+    restaurantAddress = json['store_address'];
+    restaurantLat = json['store_lat'];
+    restaurantLng = json['store_lng'];
+    restaurantLogoFullUrl = json['store_logo_full_url'];
+    restaurantPhone = json['store_phone'];
+    restaurantDeliveryTime = json['min_delivery_time'] != null && json['max_delivery_time'] != null
+        ? '${json['min_delivery_time']}-${json['max_delivery_time']}' : null;
     vendorId = json['vendor_id'];
     detailsCount = json['details_count'];
     orderNote = json['order_note'];
@@ -167,7 +170,7 @@ class OrderModel {
     customer = json['customer'] != null ? Customer.fromJson(json['customer']) : null;
     processingTime = json['processing_time'];
     chatPermission = json['chat_permission'];
-    restaurantModel = json['restaurant_model'];
+    restaurantModel = json['store_business_model'];
     cutlery = json['cutlery'];
     unavailableItemNote = json['unavailable_item_note'];
     deliveryInstruction = json['delivery_instruction'];
@@ -185,12 +188,13 @@ class OrderModel {
         payments!.add(Payments.fromJson(v));
       });
     }
-    storeDiscountAmount = json['restaurant_discount']?.toDouble();
+    storeDiscountAmount = json['store_discount_amount']?.toDouble();
     taxStatus = json['tax_status'] == 'included' ? true : false;
     additionalCharge = json['additional_charge']?.toDouble() ?? 0;
     extraPackagingAmount = json['extra_packaging_amount']?.toDouble();
     referrerBonusAmount = json['ref_bonus_amount']?.toDouble();
     bringChangeAmount = json['bring_change_amount']?.toDouble();
+    storeWillGet = json['store_will_get']?.toDouble();
   }
 
   Map<String, dynamic> toJson() {
@@ -246,6 +250,7 @@ class OrderModel {
     data['extra_packaging_amount'] = extraPackagingAmount;
     data['ref_bonus_amount'] = referrerBonusAmount;
     data['bring_change_amount'] = bringChangeAmount;
+    data['store_will_get'] = storeWillGet;
     return data;
   }
 }

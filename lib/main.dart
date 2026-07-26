@@ -25,13 +25,13 @@ Future<void> main() async {
 
   if(GetPlatform.isAndroid) {
     await Firebase.initializeApp(
-      name: 'asdascascas',
+      name: 'Kilagbe Rider',
       options: const FirebaseOptions(
-        apiKey: 'AIzaSyA_Rq_phkxtT9FjtLhnmuLfQGzsfavv4So',
-        appId: '1:189248694073:android:817858e96d5c9ceeb0eae8',
-        messagingSenderId: '189248694073',
-        projectId: 'khanapina-880ea',
-        storageBucket: 'khanapina-880ea.firebasestorage.app',
+        apiKey: "AIzaSyDXBKsbUu0lQtcgdEp8N54NXCBlDw7iURo",
+        appId: '1:530748973372:android:3fc129850338091e307e39',
+        messagingSenderId: '530748973372',
+        projectId: 'ki-lagbe-23b44',
+        storageBucket: "ki-lagbe-23b44.appspot.com",
       ),
     );
   } else {

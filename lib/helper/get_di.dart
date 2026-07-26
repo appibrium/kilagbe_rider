@@ -19,6 +19,11 @@ import 'package:stackfood_multivendor_driver/feature/disbursements/domain/reposi
 import 'package:stackfood_multivendor_driver/feature/disbursements/domain/repositories/disbursement_repository_interface.dart';
 import 'package:stackfood_multivendor_driver/feature/disbursements/domain/services/disbursement_service.dart';
 import 'package:stackfood_multivendor_driver/feature/disbursements/domain/services/disbursement_service_interface.dart';
+import 'package:stackfood_multivendor_driver/feature/rider_rank/controllers/rider_rank_controller.dart';
+import 'package:stackfood_multivendor_driver/feature/rider_rank/domain/repositories/rider_rank_repository.dart';
+import 'package:stackfood_multivendor_driver/feature/rider_rank/domain/repositories/rider_rank_repository_interface.dart';
+import 'package:stackfood_multivendor_driver/feature/rider_rank/domain/services/rider_rank_service.dart';
+import 'package:stackfood_multivendor_driver/feature/rider_rank/domain/services/rider_rank_service_interface.dart';
 import 'package:stackfood_multivendor_driver/feature/language/controllers/localization_controller.dart';
 import 'package:stackfood_multivendor_driver/feature/language/domain/repositories/language_repository.dart';
 import 'package:stackfood_multivendor_driver/feature/language/domain/repositories/language_repository_interface.dart';
@@ -87,6 +92,9 @@ Future<Map<String, Map<String, String>>> init() async {
   DisbursementRepositoryInterface disbursementRepositoryInterface = DisbursementRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => disbursementRepositoryInterface);
 
+  RiderRankRepositoryInterface riderRankRepositoryInterface = RiderRankRepository(apiClient: Get.find(), sharedPreferences: Get.find());
+  Get.lazyPut(() => riderRankRepositoryInterface);
+
   LanguageRepositoryInterface languageRepositoryInterface = LanguageRepository(apiClient: Get.find(), sharedPreferences: Get.find());
   Get.lazyPut(() => languageRepositoryInterface);
 
@@ -120,6 +128,9 @@ Future<Map<String, Map<String, String>>> init() async {
 
   DisbursementServiceInterface disbursementServiceInterface = DisbursementService(disbursementRepositoryInterface: Get.find());
   Get.lazyPut(() => disbursementServiceInterface);
+
+  RiderRankServiceInterface riderRankServiceInterface = RiderRankService(riderRankRepositoryInterface: Get.find());
+  Get.lazyPut(() => riderRankServiceInterface);
 
   LanguageServiceInterface languageServiceInterface = LanguageService(languageRepositoryInterface: Get.find());
   Get.lazyPut(() => languageServiceInterface);
@@ -159,6 +170,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => NotificationController(notificationServiceInterface: Get.find()));
   Get.lazyPut(() => ThemeController(sharedPreferences: Get.find()));
   Get.lazyPut(() => DisbursementController(disbursementServiceInterface: Get.find()));
+  Get.lazyPut(() => RiderRankController(riderRankServiceInterface: Get.find()));
   Get.lazyPut(() => LocalizationController(languageServiceInterface: Get.find()));
   Get.lazyPut(() => OrderController(orderServiceInterface: Get.find()));
   Get.lazyPut(() => ForgotPasswordController(forgotPasswordServiceInterface: Get.find()));

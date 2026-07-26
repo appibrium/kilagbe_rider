@@ -26,9 +26,10 @@ class _IncentiveScreenState extends State<IncentiveScreen> {
 
       body: GetBuilder<ProfileController>(builder: (profileController) {
 
-        for (var incentive in profileController.profileModel!.incentiveList!) {
-          if(incentive.earning! < profileController.profileModel!.todaysEarning!){
-            selectedIndex = profileController.profileModel!.incentiveList!.indexOf(incentive);
+        final incentiveList = profileController.profileModel?.incentiveList ?? [];
+        for (var incentive in incentiveList) {
+          if((incentive.earning ?? 0) < (profileController.profileModel?.todaysEarning ?? 0)){
+            selectedIndex = incentiveList.indexOf(incentive);
           }
         }
 
@@ -48,7 +49,7 @@ class _IncentiveScreenState extends State<IncentiveScreen> {
                   const SizedBox(height: Dimensions.paddingSizeExtraSmall),
 
                   Text(
-                    PriceConverter.convertPrice(profileController.profileModel!.totalIncentiveEarning),
+                    PriceConverter.convertPrice(profileController.profileModel?.totalIncentiveEarning),
                     textAlign: TextAlign.center, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeOverLarge, color: Colors.black),
                   ),
                 ],
@@ -60,9 +61,9 @@ class _IncentiveScreenState extends State<IncentiveScreen> {
               child: Text('current_incentive_offers'.tr, style: robotoMedium),
             ),
 
-            profileController.profileModel!.incentiveList!.isNotEmpty ? ListView.builder(
+            incentiveList.isNotEmpty ? ListView.builder(
               shrinkWrap: true,
-              itemCount: profileController.profileModel!.incentiveList!.length,
+              itemCount: incentiveList.length,
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
                 return Padding(
@@ -82,9 +83,9 @@ class _IncentiveScreenState extends State<IncentiveScreen> {
 
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
-                        Text(PriceConverter.convertPrice(profileController.profileModel!.incentiveList![index].earning), style: robotoMedium),
+                        Text(PriceConverter.convertPrice(incentiveList[index].earning), style: robotoMedium),
 
-                        Text(PriceConverter.convertPrice(profileController.profileModel!.incentiveList![index].incentive), style: robotoMedium),
+                        Text(PriceConverter.convertPrice(incentiveList[index].incentive), style: robotoMedium),
 
                       ]),
 

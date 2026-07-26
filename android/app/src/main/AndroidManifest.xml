@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.khanapina.rider"
+    package="com.kilagbe.rider"
     xmlns:tools="http://schemas.android.com/tools">
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
@@ -37,7 +37,7 @@
 
     <application
         tools:replace="android:label"
-        android:label="KhanaPina Rider"
+        android:label="Kilagbe Rider"
         android:name="${applicationName}"
         android:extractNativeLibs="true"
         android:requestLegacyExternalStorage="true"
@@ -85,10 +85,6 @@
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
-        <service
-            android:name="com.khanapina.rider.BackgroundService"
-            android:enabled="true"
-            android:exported="false" />
 
         <!-- Warning: Do not change service name. -->
         <service

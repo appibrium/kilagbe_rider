@@ -1,5 +1,9 @@
+import 'package:stackfood_multivendor_driver/common/widgets/custom_asset_image_widget.dart';
 import 'package:stackfood_multivendor_driver/common/widgets/custom_card.dart';
 import 'package:stackfood_multivendor_driver/feature/order/domain/models/order_model.dart';
+import 'package:stackfood_multivendor_driver/feature/profile/controllers/profile_controller.dart';
+import 'package:stackfood_multivendor_driver/feature/splash/controllers/splash_controller.dart';
+import 'package:stackfood_multivendor_driver/helper/price_converter_helper.dart';
 import 'package:stackfood_multivendor_driver/feature/order/screens/order_details_screen.dart';
 import 'package:stackfood_multivendor_driver/helper/route_helper.dart';
 import 'package:stackfood_multivendor_driver/util/color_resources.dart';
@@ -94,7 +98,7 @@ class OrderWidget extends StatelessWidget {
                   const SizedBox(width: Dimensions.paddingSizeExtraSmall),
 
                   Expanded(child: Text(
-                    orderModel.orderStatus == 'picked_up' ? orderModel.deliveryAddress!.address.toString() : orderModel.restaurantAddress ?? '',
+                    orderModel.orderStatus == 'picked_up' ? (orderModel.deliveryAddress?.address?.toString() ?? '') : orderModel.restaurantAddress ?? '',
                     style: robotoRegular.copyWith(color: Theme.of(context).hintColor, fontSize: Dimensions.fontSizeSmall),
                     maxLines: 1, overflow: TextOverflow.ellipsis,
                   )),
@@ -104,8 +108,8 @@ class OrderWidget extends StatelessWidget {
                     onTap: () async {
                       String url;
                       if(orderModel.orderStatus == 'picked_up') {
-                        url = 'https://www.google.com/maps/dir/?api=1&destination=${orderModel.deliveryAddress!.latitude}'
-                            ',${orderModel.deliveryAddress!.longitude}&mode=d';
+                        url = 'https://www.google.com/maps/dir/?api=1&destination=${orderModel.deliveryAddress?.latitude ?? '0'}'
+                            ',${orderModel.deliveryAddress?.longitude ?? '0'}&mode=d';
                       }else  {
                         url = 'https://www.google.com/maps/dir/?api=1&destination=${orderModel.restaurantLat ?? '0'}'
                             ',${orderModel.restaurantLng ?? '0'}&mode=d';
@@ -127,6 +131,25 @@ class OrderWidget extends StatelessWidget {
                     ]),
                   ),
                 ]),
+
+              (Get.find<SplashController>().configModel?.showDmEarning ?? false)
+                  && Get.find<ProfileController>().profileModel?.earnings == 1 ? Padding(
+                padding: const EdgeInsets.only(top: Dimensions.paddingSizeSmall),
+                child: Row(children: [
+                  CustomAssetImageWidget(image: Images.amountIcon, height: 18, width: 18),
+                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+
+                  Text('delivery_charge'.tr, style: robotoRegular.copyWith(
+                    fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).hintColor,
+                  )),
+                  const Expanded(child: SizedBox()),
+
+                  Text(
+                    PriceConverter.convertPrice(orderModel.originalDeliveryCharge ?? orderModel.deliveryCharge ?? 0),
+                    style: robotoBold.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).primaryColor),
+                  ),
+                ]),
+              ) : const SizedBox(),
               const SizedBox(height: Dimensions.paddingSizeSmall),
 
               Text('details'.tr, style: robotoRegular.copyWith(color: Theme.of(context).primaryColor, decoration: TextDecoration.underline, decorationColor: Theme.of(context).primaryColor)),

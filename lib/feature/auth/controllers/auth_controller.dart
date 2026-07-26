@@ -123,7 +123,7 @@ class AuthController extends GetxController implements GetxService {
     Response response = await authServiceInterface.login(phone, password);
     ResponseModel responseModel;
     if (response.statusCode == 200) {
-      authServiceInterface.saveUserToken(response);
+      await authServiceInterface.saveUserToken(response);
       await authServiceInterface.updateToken();
       responseModel = ResponseModel(true, 'successful');
     } else {
