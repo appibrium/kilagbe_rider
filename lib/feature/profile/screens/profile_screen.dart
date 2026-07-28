@@ -130,7 +130,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }),
             const SizedBox(height: Dimensions.paddingSizeSmall),
 
-            (profileController.profileModel != null && profileController.profileModel!.earnings == 1) ? Padding(
+            // Salary based riders earn no per-order income but still collect cash
+            // on delivery, so they need the wallet to see and settle what they owe.
+            profileController.profileModel != null ? Padding(
               padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
               child: ProfileButtonWidget(icon: Icons.wallet, title: 'wallet'.tr, onTap: () {
                 Get.toNamed(RouteHelper.getMyAccountRoute());

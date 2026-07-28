@@ -370,7 +370,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ]),
                     const SizedBox(height: Dimensions.paddingSizeLarge),
 
-                    profileController.profileModel != null ? profileController.profileModel!.earnings == 1 ? CustomCard(
+                    // Shown to salary based riders too: the cash they collected on
+                    // delivery belongs to the admin regardless of how they are paid.
+                    profileController.profileModel != null ? CustomCard(
                       height: 85, width: MediaQuery.of(context).size.width,
                       padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeLarge),
                       child: Row(children: [
@@ -402,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
 
                       ]),
-                    ) : SizedBox() : Shimmer(
+                    ) : Shimmer(
                       duration: const Duration(seconds: 2),
                       enabled: true,
                       child: Container(

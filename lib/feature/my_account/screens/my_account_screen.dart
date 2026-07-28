@@ -195,23 +195,28 @@ class _MyAccountScreenState extends State<MyAccountScreen> {
                             ]),
                           ),
                         ),
-                        const SizedBox(width: Dimensions.paddingSizeDefault),
+                        // Withdrawals are a per-delivery earnings concept. A salary
+                        // based rider has nothing to withdraw, only collected cash
+                        // to hand back, so the tile is dropped for them.
+                        if(profileController.profileModel!.earnings == 1) ...[
+                          const SizedBox(width: Dimensions.paddingSizeDefault),
 
-                        Expanded(
-                          child: CustomCard(
-                            isBorder: false,
-                            padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                              Text(
-                                PriceConverter.convertPrice(profileController.profileModel!.totalWithdrawn),
-                                style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor),
-                              ),
-                              const SizedBox(height: Dimensions.paddingSizeSmall),
+                          Expanded(
+                            child: CustomCard(
+                              isBorder: false,
+                              padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                                Text(
+                                  PriceConverter.convertPrice(profileController.profileModel!.totalWithdrawn),
+                                  style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge, color: Theme.of(context).primaryColor),
+                                ),
+                                const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                              Text('total_withdrawn'.tr, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
-                            ]),
+                                Text('total_withdrawn'.tr, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
+                              ]),
+                            ),
                           ),
-                        ),
+                        ],
 
                       ]),
                       const SizedBox(height:Dimensions.paddingSizeSmall),
