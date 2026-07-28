@@ -82,6 +82,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return;
       }
       Get.find<OrderController>().getOrderWithId(widget.orderId);
+      // Items are refreshed too: an order can be edited (quantity changed, item
+      // added or removed) while the rider has this screen open, and fetching
+      // only the order header would leave the old quantities on screen.
+      Get.find<OrderController>().getOrderDetails(widget.orderId);
     });
   }
 
