@@ -145,7 +145,8 @@ class OrderRepository implements OrderRepositoryInterface {
     if (response.statusCode == 200) {
       OrderCancellationBodyModel orderCancellationBody = OrderCancellationBodyModel.fromJson(response.body);
       orderCancelReasons = [];
-      for (var element in orderCancellationBody.reasons!) {
+      // Null safe: an empty or unparsed list should show "no reasons", not throw.
+      for (var element in orderCancellationBody.reasons ?? <CancellationData>[]) {
         orderCancelReasons.add(element);
       }
     }

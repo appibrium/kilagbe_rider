@@ -10,9 +10,13 @@ class OrderCancellationBodyModel {
     totalSize = json['total_size'];
     limit = json['limit'];
     offset = json['offset'];
-    if (json['reasons'] != null) {
+    // The endpoint returns the list under "data"; "reasons" was never present,
+    // so this parsed to null and the null assertion downstream threw, leaving
+    // the cancellation dialog stuck on its loader forever.
+    final dynamic reasonList = json['data'] ?? json['reasons'];
+    if (reasonList != null) {
       reasons = <CancellationData>[];
-      json['reasons'].forEach((v) {
+      reasonList.forEach((v) {
         reasons!.add(CancellationData.fromJson(v));
       });
     }

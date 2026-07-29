@@ -83,7 +83,14 @@ class _CancellationDialogueWidgetState extends State<CancellationDialogueWidget>
                         );
                       },
                     ),
-                  ) : SizedBox() : const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault), child: CircularProgressIndicator())),
+                  ) : Padding(
+                    padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeLarge),
+                    child: Center(child: Text(
+                      'no_reason_found'.tr,
+                      style: robotoRegular.copyWith(color: Theme.of(context).hintColor),
+                      textAlign: TextAlign.center,
+                    )),
+                  ) : const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault), child: CircularProgressIndicator())),
                 ]),
               ),
             ),

@@ -784,6 +784,7 @@
     "select_brand": "حدد العلامة التجارية",
     "select_brand_model": "حدد نموذج العلامة التجارية",
     "select_cancellation_reasons": "حدد أسباب الإلغاء",
+    "no_reason_found": "لا يوجد سبب إلغاء متاح. يرجى الاتصال بالمسؤول.",
     "select_category": "حدد الفئة",
     "select_date": "حدد التاريخ",
     "select_date_range": "حدد النطاق الزمني",

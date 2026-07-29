@@ -784,6 +784,7 @@
     "select_brand": "Seleccionar marca",
     "select_brand_model": "Seleccionar marca y modelo",
     "select_cancellation_reasons": "Seleccione motivos de cancelación",
+    "no_reason_found": "No hay motivo de cancelación disponible. Contacte con el administrador.",
     "select_category": "Seleccionar categoría",
     "select_date": "Seleccionar fecha",
     "select_date_range": "Seleccionar rango de fechas",
